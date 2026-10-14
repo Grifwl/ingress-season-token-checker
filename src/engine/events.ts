@@ -23,7 +23,8 @@ export interface EventEvaluation {
   committed: Range;
   /**
    * Tokens the agent will not get: what was left unearned in a finished
-   * event, or the whole potential of an event marked "no".
+   * event, the whole remainder of an event marked "no", or the bounties a
+   * "minimum" campaign plan skips.
    */
   forfeited: Range;
 }
@@ -137,6 +138,25 @@ export function assignmentRemaining(a: Assignment, progress: number, plan: Campa
 }
 
 /**
+ * Tokens of one assignment that a plan deliberately leaves behind: with the
+ * "minimum" plan, the bounties beyond the required ones are never done.
+ *
+ * @param a - Assignment config.
+ * @param progress - Bounties done (detailed) or opaque status code.
+ * @param plan - Plan for the rest of the assignment.
+ * @returns Interval of tokens that will not be earned.
+ */
+export function assignmentForfeited(a: Assignment, progress: number, plan: CampaignPlan): Range {
+  // Opaque assignments cannot be partially skipped as far as we know.
+  if (plan === "full" || !isDetailed(a)) return exact(0);
+  const done = Math.min(progress, a.bounties.length);
+  // Once the assignment is complete the agent stops; before that, only the
+  // required bounties will be done.
+  const skipped = a.bounties.length - Math.max(done, a.required);
+  return bountySum(a.bounties, skipped);
+}
+
+/**
  * Compute the token figures of one event.
  *
  * @param event - Event config.
@@ -148,6 +168,8 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
   const phase = eventPhase(event, today);
   let earned = exact(0);
   let potential = exact(0);
+  // Tokens the chosen campaign plan leaves behind even if the event is done.
+  let planLoss = exact(0);
 
   switch (event.kind) {
     case "fixed":
@@ -167,6 +189,9 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
         potential = add(
           ...event.assignments.map((a, i) => assignmentRemaining(a, progressOf(i), state.plan)),
         );
+        planLoss = add(
+          ...event.assignments.map((a, i) => assignmentForfeited(a, progressOf(i), state.plan)),
+        );
       }
       break;
 
@@ -183,9 +208,9 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
       break;
   }
 
-  let forfeited = exact(0);
+  let forfeited = planLoss;
   if (phase === "past") forfeited = sub(exact(eventMaxTokens(event)), earned);
-  else if (state.intent === "no") forfeited = potential;
+  else if (state.intent === "no") forfeited = add(potential, planLoss);
 
   return {
     event,

@@ -59,6 +59,17 @@ describe("assignments", () => {
     expect(assignmentRemaining(a1!, 0, "minimum")).toEqual({ min: 170, max: 170 });
     expect(assignmentRemaining(a1!, 3, "minimum")).toEqual({ min: 0, max: 0 });
   });
+
+  it("reports the tokens a minimum plan leaves behind", () => {
+    // Noise Floor with assignments 1-2 at 4/4: the minimum plan skips one
+    // bounty in assignments 3 (90) and 4 (120).
+    const state = normalizeState(cygnus, {
+      events: { "noise-floor": { intent: "yes", plan: "minimum", assignments: [4, 4, 0, 0] } },
+    });
+    const ev = forecast(cygnus, state, "2026-10-14").evaluations.find((e) => e.event.id === "noise-floor")!;
+    expect(ev.potential).toEqual({ min: 1190, max: 1190 });
+    expect(ev.forfeited).toEqual({ min: 210, max: 210 });
+  });
 });
 
 describe("bountyPlan", () => {
