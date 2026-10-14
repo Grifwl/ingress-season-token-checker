@@ -1,0 +1,15 @@
+{
+  // Cloudflare Worker serving the static build output. There is no server
+  // code: every calculation runs in the browser.
+  "name": "ingress-season-token-checker",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Every series lives under its own path (e.g. /cygnus) but they are all
+    // served by the same single-page app, so unknown paths fall back to it.
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "season.grifwl.blue", "custom_domain": true }
+  ]
+}

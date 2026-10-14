@@ -1,0 +1,124 @@
+/* Colour tokens: light by default, dark when the system prefers it. */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --text: #1c1f24;
+  --muted: #5d6470;
+  --border: #dde1e6;
+  --accent: #2f6fdf;
+  --ok: #1f8a4c;
+  --maybe: #b07a00;
+  --no: #c23a3a;
+  --badge: #eceff3;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317;
+    --surface: #1b1e24;
+    --text: #e7e9ec;
+    --muted: #9aa1ad;
+    --border: #2d323b;
+    --accent: #6ea0ff;
+    --ok: #4cc27f;
+    --maybe: #e0b13d;
+    --no: #ef7272;
+    --badge: #272b33;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+#app { max-width: 1240px; margin: 0 auto; padding: 16px; }
+
+/*
+ * Narrow screens: status, then results, then the long list of sources, so
+ * the forecast is visible without scrolling past every event.
+ * Wide screens: inputs on the left, results pinned on the right so they stay
+ * in view while editing any event.
+ */
+.layout { display: grid; grid-template-areas: "status" "results" "sources"; }
+.area-status { grid-area: status; }
+.area-sources { grid-area: sources; }
+.area-results { grid-area: results; }
+@media (min-width: 1000px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "status results" "sources results";
+    column-gap: 16px;
+  }
+  .area-results {
+    align-self: start;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}
+a { color: var(--accent); }
+h1 { margin: 0.2em 0; font-size: 1.8rem; }
+h2 { margin-top: 0; font-size: 1.3rem; }
+h3 { font-size: 1.05rem; margin: 1.2em 0 0.4em; }
+h4 { margin: 0; font-size: 1rem; }
+.muted { color: var(--muted); }
+.eyebrow { margin: 0; font-size: 0.85rem; }
+
+.page-header { margin-bottom: 16px; }
+.medals { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 8px 0 0; }
+.medals li { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 12px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.source + .source { border-top: 1px solid var(--border); margin-top: 16px; }
+
+.fields { display: flex; flex-wrap: wrap; gap: 12px; }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; flex: 1 1 200px; }
+.fields label.check { flex-direction: row; align-items: center; }
+input, select {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+.event { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 10px 0; }
+.event.phase-past { opacity: 0.85; }
+.event-head { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.event-head h4 { flex: 1 1 auto; }
+.event p { margin: 4px 0; }
+.event-summary { font-size: 0.9rem; font-weight: 600; }
+.note { font-size: 0.85rem; font-style: italic; }
+.badge { background: var(--badge); border-radius: 999px; padding: 0 8px; font-size: 0.75rem; }
+.badge-inperson { color: var(--maybe); }
+
+table.mini { border-collapse: collapse; font-size: 0.9rem; }
+table.mini th, table.mini td { border-bottom: 1px solid var(--border); padding: 2px 12px 2px 0; text-align: left; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 0; }
+.stats div { background: var(--bg); border-radius: 8px; padding: 8px 12px; }
+.stats dt { font-size: 0.8rem; color: var(--muted); }
+.stats dd { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.stats dd.muted { font-size: 0.8rem; font-weight: normal; }
+
+.tier { border-left: 4px solid var(--no); padding: 4px 12px; margin: 12px 0; }
+.tier p { margin: 4px 0; }
+.tier-ok { border-color: var(--ok); }
+.tier-maybe { border-color: var(--maybe); }
+.warnings { border-left: 4px solid var(--maybe); padding: 4px 12px; margin-bottom: 12px; }
+.undecided { padding-left: 20px; }
+.series-list { margin: 0; padding-left: 20px; }
