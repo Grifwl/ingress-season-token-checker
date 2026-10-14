@@ -21,6 +21,11 @@ export interface EventEvaluation {
   potential: Range;
   /** Part of `potential` the agent has committed to (intent "yes"). */
   committed: Range;
+  /**
+   * Tokens the agent will not get: what was left unearned in a finished
+   * event, or the whole potential of an event marked "no".
+   */
+  forfeited: Range;
 }
 
 /**
@@ -178,6 +183,10 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
       break;
   }
 
+  let forfeited = exact(0);
+  if (phase === "past") forfeited = sub(exact(eventMaxTokens(event)), earned);
+  else if (state.intent === "no") forfeited = potential;
+
   return {
     event,
     state,
@@ -185,5 +194,6 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
     earned,
     potential,
     committed: state.intent === "yes" ? potential : exact(0),
+    forfeited,
   };
 }

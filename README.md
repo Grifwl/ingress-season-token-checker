@@ -1,5 +1,7 @@
 # Ingress Season Token Checker
 
+**Languages:** English · [Español](README.es.md)
+
 A web page that forecasts which Ingress season medal you will reach, and
 what it takes to reach the next one. It runs at
 [season.grifwl.blue](https://season.grifwl.blue), with one page per season
@@ -32,6 +34,9 @@ They get narrower as the series config is refined.
 
 Your answers are only stored in your own browser (`localStorage`).
 
+The interface is available in English (default) and Spanish. It follows the
+browser's language and can be switched from the header.
+
 ## Adding a new series
 
 Everything specific to a season lives in one config file:
@@ -43,8 +48,11 @@ Everything specific to a season lives in one config file:
      - `fixed`: all-or-nothing, e.g. a First Saturday check-in;
      - `campaign`: Dispatch campaigns with a known assignment structure.
        Assignments can be *detailed* (bounties + reward + required count) or
-       *opaque* (only the total is known);
+       *opaque* (only the total is known; the page flags them as missing
+       per-bounty details);
      - `open`: only the maximum is known; agents enter what they earned.
+   Texts shown to users (names, notes, labels) can be a plain string or a
+   `{ en, es }` translation map.
 2. Register it in `src/series/index.ts`.
 3. Run `npm test`. It checks every config for consistency.
 
@@ -78,7 +86,7 @@ npm run deploy
 src/
   series/      season configs and their types
   engine/      forecasting logic (no DOM; reusable, e.g. by a bot)
-  ui/          page rendering, formatting and browser storage
+  ui/          page rendering, translations, formatting and storage
   main.ts      router
 tests/         unit tests of the engine and configs
 ```

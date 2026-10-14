@@ -114,7 +114,7 @@ describe("forecast", () => {
       events: { "global-battles": { intent: "no" }, "global-deploy": { intent: "no" } },
     });
     const f = forecast(cygnus, state, "2026-09-25");
-    const gold = f.tiers.find((t) => t.tier.name === "Gold")!;
+    const gold = f.tiers.at(-1)!;
     // 3 bounties: 92 * 40 + 6,000 remote = 9,680 -> 14,320 missing -> 6 events.
     // 4 bounties: 92 * 60 + 6,000 remote = 11,520 -> 12,480 missing -> 5 events.
     const total = (p: (typeof gold.inPerson)[number]) => p.needed?.reduce((s, n) => s + n.count, 0);

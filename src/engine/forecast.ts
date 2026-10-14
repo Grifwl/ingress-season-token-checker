@@ -46,6 +46,16 @@ export interface TierAnalysis {
   inPerson: InPersonPlan[];
 }
 
+/**
+ * Inconsistency detected in the agent's input. Returned as a code rather than
+ * a message so that the UI can translate it.
+ */
+export type ForecastWarning =
+  /** Declared event tokens exceed the current total. */
+  | { code: "events-exceed-total" }
+  /** The total is higher than bounties and declared events can explain. */
+  | { code: "unexplained-tokens"; dailyMax: number };
+
 /** Full result of a forecast. */
 export interface Forecast {
   season: "upcoming" | "running" | "over";
@@ -76,8 +86,8 @@ export interface Forecast {
   evaluations: EventEvaluation[];
   /** Events marked "maybe" that could still grant tokens. */
   undecided: EventEvaluation[];
-  /** Inconsistencies detected in the input, as user-facing messages. */
-  warnings: string[];
+  /** Inconsistencies detected in the input. */
+  warnings: ForecastWarning[];
 }
 
 /**
@@ -135,19 +145,13 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
   const undecided = evaluations.filter((e) => e.state.intent === "maybe" && e.potential.max > 0);
 
   // Step 1: tokens attributable to past daily bounties.
-  const warnings: string[] = [];
+  const warnings: ForecastWarning[] = [];
   const rawPast = sub(exact(current - todayTokens), eventsEarned);
   const pastCap = elapsedDays * dailyMax;
   if (rawPast.max < 0) {
-    warnings.push(
-      "The event tokens you declared add up to more than your current total. " +
-        "Check your current tokens and your event progress.",
-    );
+    warnings.push({ code: "events-exceed-total" });
   } else if (rawPast.min > pastCap) {
-    warnings.push(
-      `Your total is higher than daily bounties (max ${dailyMax}/day) and your ` +
-        "declared events can explain. You may have forgotten to declare an event.",
-    );
+    warnings.push({ code: "unexplained-tokens", dailyMax });
   }
   const pastBountyTokens = clamp(rawPast, 0, pastCap);
 

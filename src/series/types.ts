@@ -11,10 +11,17 @@
  * of dates is inclusive on both ends.
  */
 
+/**
+ * Text shown to users: either a plain string (same in every language) or a
+ * map of language code to translation. English is mandatory and is used as
+ * the fallback for any missing translation.
+ */
+export type LocalizedText = string | { en: string; es?: string };
+
 /** One tier of the season medal, e.g. Bronze / Silver / Gold. */
 export interface MedalTier {
   /** Display name of the tier. */
-  name: string;
+  name: LocalizedText;
   /** Tokens needed to unlock the tier. */
   tokens: number;
 }
@@ -50,9 +57,9 @@ export interface EventCategory {
   /** Identifier referenced by {@link EventBase.category}. */
   id: string;
   /** Singular label, e.g. "First Saturday". */
-  label: string;
+  label: LocalizedText;
   /** Plural label, e.g. "First Saturdays". */
-  pluralLabel: string;
+  pluralLabel: LocalizedText;
 }
 
 /** Fields shared by every kind of token-granting event. */
@@ -60,7 +67,7 @@ interface EventBase {
   /** Stable identifier, used as the key of the user's saved answers. */
   id: string;
   /** Display name. */
-  name: string;
+  name: LocalizedText;
   /** Id of an {@link EventCategory}. */
   category: string;
   /** First day of the event. */
@@ -72,7 +79,7 @@ interface EventBase {
   /** Link to the official announcement. */
   infoUrl?: string;
   /** Free text shown to the user (caveats, assumptions...). */
-  notes?: string;
+  notes?: LocalizedText;
 }
 
 /** An all-or-nothing event, such as checking in at a First Saturday. */
@@ -113,26 +120,28 @@ export type EventConfig = FixedEvent | CampaignEvent | OpenEvent;
  * 4th bounty leaves tokens on the table).
  */
 export interface DetailedAssignment {
-  name: string;
+  name: LocalizedText;
   /** Tokens granted by each bounty. */
   bounties: number[];
   /** Tokens granted when the assignment is completed. */
   reward: number;
   /** Number of bounties needed to complete the assignment. */
   required: number;
-  /** Caveats, e.g. when the breakdown is inferred rather than official. */
-  note?: string;
+  /** Caveats about this assignment's figures. */
+  note?: LocalizedText;
 }
 
 /**
  * An assignment of which only the total (bounties + reward) is known. The
- * user can only say whether it is not started, in progress or completed.
+ * user can only say whether it is not started, in progress or completed, and
+ * the page flags it as lacking per-bounty details.
  */
 export interface OpaqueAssignment {
-  name: string;
+  name: LocalizedText;
   /** Total tokens granted by the assignment, bounties included. */
   total: number;
-  note?: string;
+  /** Caveats about this assignment's figures. */
+  note?: LocalizedText;
 }
 
 /** Any assignment of a {@link CampaignEvent}. */
@@ -145,7 +154,7 @@ export interface SeriesConfig {
   /** Display name, e.g. "Cygnus". */
   name: string;
   /** Name of the season currency, e.g. "Cygnus Tokens". */
-  tokenName: string;
+  tokenName: LocalizedText;
   /** Link to the official season announcement. */
   infoUrl: string;
   /** First day of the season. */
