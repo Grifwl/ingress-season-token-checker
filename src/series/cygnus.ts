@@ -113,7 +113,7 @@ export const cygnus: SeriesConfig = {
       kind: "campaign",
       assignments: [
         {
-          name: { en: "Assignment 1", es: "Asignación 1" },
+          name: { en: "Assignment 1 (5 battle beacons)", es: "Asignación 1 (5 balizas de batalla)" },
           bounties: [200, 200, 200],
           reward: 400,
           required: 3,
@@ -124,7 +124,7 @@ export const cygnus: SeriesConfig = {
           reward: 1000,
           required: 3,
         },
-        { name: { en: "Assignment 3", es: "Asignación 3" }, total: 4500 },
+        { name: { en: "Assignment 3 (200 battle beacons)", es: "Asignación 3 (200 balizas de batalla)" }, total: 4500 },
       ],
     },
     {
