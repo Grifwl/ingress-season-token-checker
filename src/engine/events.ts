@@ -136,6 +136,42 @@ export function enforceAssignmentOrder(assignments: Assignment[], progress: numb
   return assignments.map((_, i) => (i < locked ? progress[i] ?? 0 : 0));
 }
 
+/** How an assignment's progress is recorded: bounty count or status code. */
+export type AssignmentKind = "detailed" | "opaque";
+
+/**
+ * Kind of an assignment config.
+ *
+ * @param a - Assignment config.
+ * @returns "detailed" when its bounties are known, "opaque" otherwise.
+ */
+export function assignmentKind(a: Assignment): AssignmentKind {
+  return isDetailed(a) ? "detailed" : "opaque";
+}
+
+/**
+ * Translate saved progress when the config of an assignment has changed
+ * kind since it was saved. This happens whenever per-bounty details get
+ * published for a campaign: a stored "completed" status must not be read as
+ * "2 bounties done".
+ *
+ * @param a - Current assignment config.
+ * @param progress - Saved progress value.
+ * @param savedKind - Kind the value was recorded with.
+ * @returns Progress expressed for the current kind.
+ */
+export function convertAssignmentProgress(a: Assignment, progress: number, savedKind: AssignmentKind): number {
+  if (isDetailed(a)) {
+    if (savedKind === "detailed") return Math.min(progress, a.bounties.length);
+    // A completed assignment had at least the required bounties done; how
+    // many more is unknown, so assume the minimum and let the agent adjust.
+    return progress >= OPAQUE_COMPLETED ? a.required : 0;
+  }
+  if (savedKind === "opaque") return Math.min(progress, OPAQUE_COMPLETED);
+  // Bounties were counted but the requirement is no longer known.
+  return progress > 0 ? OPAQUE_IN_PROGRESS : OPAQUE_NOT_STARTED;
+}
+
 /**
  * Tokens already earned from one assignment.
  *

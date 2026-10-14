@@ -233,7 +233,15 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
  * @returns A neutral state that commits to nothing.
  */
 function fallbackState() {
-  return { intent: "no" as const, completed: false, assignments: [], plan: "full" as const, earnedMin: 0, earnedMax: 0 };
+  return {
+    intent: "no" as const,
+    completed: false,
+    assignments: [],
+    assignmentKinds: [],
+    plan: "full" as const,
+    earnedMin: 0,
+    earnedMax: 0,
+  };
 }
 
 /** Inputs of {@link bountyPlan}. */

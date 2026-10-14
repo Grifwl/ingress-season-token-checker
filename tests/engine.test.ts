@@ -108,7 +108,7 @@ describe("forecast", () => {
       bountiesToday: 0,
       events: {
         // Global Battles: assignment 1 done, 2 bounties of assignment 2 done.
-        "global-battles": { intent: "yes", assignments: [2, 2, 0] },
+        "global-battles": { intent: "yes", assignments: [3, 2, 0] },
         "fs-oct": { completed: true },
       },
     });
@@ -150,12 +150,23 @@ describe("assignment order", () => {
   if (gb?.kind !== "campaign") throw new Error("global-battles must be a campaign");
 
   it("locks assignments until the previous one is completed", () => {
-    // Assignment 1 (opaque) only in progress: 2 and 3 are reset.
-    expect(enforceAssignmentOrder(gb.assignments, [1, 2, 1])).toEqual([1, 0, 0]);
+    // Assignment 1 at 2 of 3 bounties: 2 and 3 are reset.
+    expect(enforceAssignmentOrder(gb.assignments, [2, 2, 1])).toEqual([2, 0, 0]);
     // Assignment 1 completed, 2 at 2 of 3 bounties: 3 stays not started.
-    expect(enforceAssignmentOrder(gb.assignments, [2, 2, 2])).toEqual([2, 2, 0]);
-    // Assignment 2 at the required 3 bounties unlocks assignment 3.
-    expect(enforceAssignmentOrder(gb.assignments, [2, 3, 1])).toEqual([2, 3, 1]);
+    expect(enforceAssignmentOrder(gb.assignments, [3, 2, 2])).toEqual([3, 2, 0]);
+    // Assignment 2 at the required 3 bounties unlocks assignment 3 (opaque).
+    expect(enforceAssignmentOrder(gb.assignments, [3, 3, 1])).toEqual([3, 3, 1]);
+  });
+
+  it("converts progress saved before per-bounty details were known", () => {
+    // Assignment 1 was saved as an opaque "completed" (2); it is now detailed.
+    const state = normalizeState(cygnus, {
+      events: {
+        "global-battles": { assignments: [2, 2, 0], assignmentKinds: ["opaque", "detailed", "opaque"] },
+      },
+    });
+    expect(state.events["global-battles"]!.assignments).toEqual([3, 2, 0]);
+    expect(state.events["global-battles"]!.assignmentKinds).toEqual(["detailed", "detailed", "opaque"]);
   });
 
   it("applies the order to saved answers", () => {

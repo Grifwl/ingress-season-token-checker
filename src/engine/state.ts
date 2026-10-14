@@ -1,5 +1,10 @@
 import type { EventConfig, SeriesConfig } from "../series/types";
-import { enforceAssignmentOrder } from "./events";
+import {
+  assignmentKind,
+  convertAssignmentProgress,
+  enforceAssignmentOrder,
+  type AssignmentKind,
+} from "./events";
 
 /** What the agent intends to do about the not-yet-earned part of an event. */
 export type Intent = "yes" | "maybe" | "no";
@@ -22,6 +27,12 @@ export interface EventState {
    * 1 = in progress, 2 = completed.
    */
   assignments: number[];
+  /**
+   * Campaign events: the kind of each assignment when its progress was
+   * saved, so values can be converted if the config gains or loses
+   * per-bounty details later.
+   */
+  assignmentKinds: AssignmentKind[];
   /** Campaign events: how the remaining assignments will be done. */
   plan: CampaignPlan;
   /** Open events: lower estimate of tokens earned so far. */
@@ -53,6 +64,7 @@ export function defaultEventState(event: EventConfig): EventState {
     intent: event.inPerson ? "maybe" : "yes",
     completed: false,
     assignments: event.kind === "campaign" ? event.assignments.map(() => 0) : [],
+    assignmentKinds: event.kind === "campaign" ? event.assignments.map(assignmentKind) : [],
     plan: "full",
     earnedMin: 0,
     earnedMax: 0,
@@ -82,13 +94,24 @@ export function normalizeState(config: SeriesConfig, raw: unknown): UserState {
     const def = defaultEventState(event);
     const saved = rawEvents[event.id] ?? {};
     const savedAssignments = Array.isArray(saved.assignments) ? saved.assignments : [];
+    const savedKinds = Array.isArray(saved.assignmentKinds) ? saved.assignmentKinds : [];
     events[event.id] = {
       intent: saved.intent === "yes" || saved.intent === "maybe" || saved.intent === "no" ? saved.intent : def.intent,
       completed: typeof saved.completed === "boolean" ? saved.completed : def.completed,
       assignments:
         event.kind === "campaign"
-          ? enforceAssignmentOrder(event.assignments, def.assignments.map((d, i) => num(savedAssignments[i], d)))
+          ? enforceAssignmentOrder(
+              event.assignments,
+              event.assignments.map((a, i) => {
+                // Answers saved before kinds were recorded match the config
+                // they were saved with, assumed to be the current one.
+                const k = savedKinds[i];
+                const kind: AssignmentKind = k === "detailed" || k === "opaque" ? k : assignmentKind(a);
+                return convertAssignmentProgress(a, num(savedAssignments[i]), kind);
+              }),
+            )
           : [],
+      assignmentKinds: def.assignmentKinds,
       plan: saved.plan === "minimum" ? "minimum" : "full",
       earnedMin: num(saved.earnedMin),
       earnedMax: num(saved.earnedMax),
