@@ -14,6 +14,13 @@
   --maybe: #b07a00;
   --no: #c23a3a;
   --badge: #eceff3;
+  /* Badge outline + text colours: in progress, finished, in person. */
+  --badge-active: #1d5fc2;
+  --badge-active-text: #1d5fc2;
+  --badge-past: #c2522d;
+  --badge-past-text: #b0461f;
+  --badge-inperson: #b07a00;
+  --badge-inperson-text: #8a6100;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -28,6 +35,12 @@
     --maybe: #e0b13d;
     --no: #ef7272;
     --badge: #272b33;
+    --badge-active: #6ea0ff;
+    --badge-active-text: #9cc2ff;
+    --badge-past: #ff8a65;
+    --badge-past-text: #ffad90;
+    --badge-inperson: #e0b13d;
+    --badge-inperson-text: #f0c85e;
     color-scheme: dark;
   }
 }
@@ -132,8 +145,20 @@ input, select {
 }
 .top-bar { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
 .note { font-size: 0.85rem; font-style: italic; }
-.badge { background: var(--badge); border-radius: 999px; padding: 0 8px; font-size: 0.75rem; }
-.badge-inperson { color: var(--maybe); }
+/*
+ * Badges keep a neutral background; states that deserve attention get a
+ * coloured outline and text (upcoming and remote stay neutral).
+ */
+.badge {
+  background: var(--badge);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+}
+.badge-active { border-color: var(--badge-active); color: var(--badge-active-text); }
+.badge-past { border-color: var(--badge-past); color: var(--badge-past-text); }
+.badge-inperson { border-color: var(--badge-inperson); color: var(--badge-inperson-text); }
 
 table.mini { border-collapse: collapse; font-size: 0.9rem; }
 table.mini th, table.mini td { border-bottom: 1px solid var(--border); padding: 2px 12px 2px 0; text-align: left; }

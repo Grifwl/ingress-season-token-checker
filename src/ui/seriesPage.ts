@@ -224,7 +224,7 @@ export class SeriesPage {
       <article class="event phase-${ev.phase}">
         <div class="event-head">
           <h4>${event.infoUrl ? `<a href="${esc(event.infoUrl)}" target="_blank" rel="noopener">${name}</a>` : name}</h4>
-          <span class="badge">${esc(phaseLabel)}</span>
+          <span class="badge badge-${ev.phase}">${esc(phaseLabel)}</span>
           <span class="badge ${event.inPerson ? "badge-inperson" : ""}">${esc(event.inPerson ? t.inPerson : t.remote)}</span>
         </div>
         <p class="muted">${esc(t.upTo(fmtDates(event.startDate, event.endDate), fmt(eventMaxTokens(event))))}</p>
