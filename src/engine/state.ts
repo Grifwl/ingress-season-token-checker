@@ -1,4 +1,5 @@
 import type { EventConfig, SeriesConfig } from "../series/types";
+import { enforceAssignmentOrder } from "./events";
 
 /** What the agent intends to do about the not-yet-earned part of an event. */
 export type Intent = "yes" | "maybe" | "no";
@@ -38,11 +39,6 @@ export interface UserState {
   /** Answers keyed by event id. */
   events: Record<string, EventState>;
 }
-
-/** Opaque assignment progress values stored in {@link EventState.assignments}. */
-export const OPAQUE_NOT_STARTED = 0;
-export const OPAQUE_IN_PROGRESS = 1;
-export const OPAQUE_COMPLETED = 2;
 
 /**
  * Default answers for an event. Remote events default to "yes" because they
@@ -89,7 +85,10 @@ export function normalizeState(config: SeriesConfig, raw: unknown): UserState {
     events[event.id] = {
       intent: saved.intent === "yes" || saved.intent === "maybe" || saved.intent === "no" ? saved.intent : def.intent,
       completed: typeof saved.completed === "boolean" ? saved.completed : def.completed,
-      assignments: def.assignments.map((d, i) => num(savedAssignments[i], d)),
+      assignments:
+        event.kind === "campaign"
+          ? enforceAssignmentOrder(event.assignments, def.assignments.map((d, i) => num(savedAssignments[i], d)))
+          : [],
       plan: saved.plan === "minimum" ? "minimum" : "full",
       earnedMin: num(saved.earnedMin),
       earnedMax: num(saved.earnedMax),

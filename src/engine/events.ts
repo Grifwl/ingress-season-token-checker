@@ -1,11 +1,11 @@
 import type { Assignment, DetailedAssignment, EventConfig } from "../series/types";
 import { add, exact, sub, type Range } from "./range";
-import {
-  OPAQUE_COMPLETED,
-  OPAQUE_IN_PROGRESS,
-  type CampaignPlan,
-  type EventState,
-} from "./state";
+import type { CampaignPlan, EventState } from "./state";
+
+/** Opaque assignment progress values stored in {@link EventState.assignments}. */
+export const OPAQUE_NOT_STARTED = 0;
+export const OPAQUE_IN_PROGRESS = 1;
+export const OPAQUE_COMPLETED = 2;
 
 /** Where an event stands relative to the forecast date. */
 export type Phase = "upcoming" | "active" | "past";
@@ -93,6 +93,47 @@ function bountySum(bounties: number[], count: number): Range {
   const n = Math.max(0, Math.min(count, sorted.length));
   const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
   return { min: sum(sorted.slice(0, n)), max: sum(sorted.slice(sorted.length - n)) };
+}
+
+/**
+ * Whether an assignment is completed, which unlocks the next one: enough
+ * bounties for a detailed assignment, or marked completed for an opaque one.
+ *
+ * @param a - Assignment config.
+ * @param progress - Bounties done (detailed) or opaque status code.
+ * @returns `true` when the next assignment is available.
+ */
+export function isAssignmentComplete(a: Assignment, progress: number): boolean {
+  return isDetailed(a) ? progress >= a.required : progress >= OPAQUE_COMPLETED;
+}
+
+/**
+ * Index of the first assignment that cannot be started yet because the
+ * previous one is not completed (campaign assignments unlock in order).
+ *
+ * @param assignments - Assignment configs.
+ * @param progress - Progress per assignment.
+ * @returns First locked index, or `assignments.length` if none is locked.
+ */
+export function firstLockedAssignment(assignments: Assignment[], progress: number[]): number {
+  for (let i = 0; i < assignments.length; i++) {
+    if (!isAssignmentComplete(assignments[i]!, progress[i] ?? 0)) return i + 1;
+  }
+  return assignments.length;
+}
+
+/**
+ * Reset the progress of every locked assignment to "not started". Used both
+ * when loading saved answers and after each edit, so lowering an earlier
+ * assignment below its completion threshold also clears the later ones.
+ *
+ * @param assignments - Assignment configs.
+ * @param progress - Progress per assignment.
+ * @returns A consistent copy of the progress.
+ */
+export function enforceAssignmentOrder(assignments: Assignment[], progress: number[]): number[] {
+  const locked = firstLockedAssignment(assignments, progress);
+  return assignments.map((_, i) => (i < locked ? progress[i] ?? 0 : 0));
 }
 
 /**

@@ -5,7 +5,7 @@ import { bountyPlan, forecast } from "../src/engine/forecast";
 import { normalizeState } from "../src/engine/state";
 import { allSeries } from "../src/series";
 import { cygnus } from "../src/series/cygnus";
-import { isDetailed } from "../src/engine/events";
+import { enforceAssignmentOrder, isDetailed } from "../src/engine/events";
 
 describe("series configs", () => {
   for (const series of allSeries) {
@@ -142,5 +142,24 @@ describe("forecast", () => {
     const f = forecast(cygnus, state, "2026-10-11");
     expect(f.pastBountyTokens).toEqual({ min: 400, max: 400 });
     expect(f.averagePerDay).toEqual({ min: 40, max: 40 });
+  });
+});
+
+describe("assignment order", () => {
+  const gb = cygnus.events.find((e) => e.id === "global-battles");
+  if (gb?.kind !== "campaign") throw new Error("global-battles must be a campaign");
+
+  it("locks assignments until the previous one is completed", () => {
+    // Assignment 1 (opaque) only in progress: 2 and 3 are reset.
+    expect(enforceAssignmentOrder(gb.assignments, [1, 2, 1])).toEqual([1, 0, 0]);
+    // Assignment 1 completed, 2 at 2 of 3 bounties: 3 stays not started.
+    expect(enforceAssignmentOrder(gb.assignments, [2, 2, 2])).toEqual([2, 2, 0]);
+    // Assignment 2 at the required 3 bounties unlocks assignment 3.
+    expect(enforceAssignmentOrder(gb.assignments, [2, 3, 1])).toEqual([2, 3, 1]);
+  });
+
+  it("applies the order to saved answers", () => {
+    const state = normalizeState(cygnus, { events: { "noise-floor": { assignments: [2, 4, 4, 4] } } });
+    expect(state.events["noise-floor"]!.assignments).toEqual([2, 0, 0, 0]);
   });
 });

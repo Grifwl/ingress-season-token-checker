@@ -1,6 +1,13 @@
 import { tokensForBounties } from "../engine/bounties";
 import { todayIso, isIsoDate } from "../engine/dates";
-import { evaluateEvent, eventMaxTokens, isDetailed, type EventEvaluation } from "../engine/events";
+import {
+  enforceAssignmentOrder,
+  evaluateEvent,
+  eventMaxTokens,
+  firstLockedAssignment,
+  isDetailed,
+  type EventEvaluation,
+} from "../engine/events";
 import {
   forecast,
   type BountyPlan,
@@ -175,7 +182,10 @@ export class SeriesPage {
 
     if (event.kind === "campaign") {
       if (ev.phase !== "upcoming") {
-        rows.push(...event.assignments.map((a, i) => this.renderAssignment(id, a, i, st.assignments[i] ?? 0)));
+        const locked = firstLockedAssignment(event.assignments, st.assignments);
+        rows.push(
+          ...event.assignments.map((a, i) => this.renderAssignment(id, a, i, st.assignments[i] ?? 0, i >= locked)),
+        );
       }
       // Only meaningful when skipping a bounty is possible (e.g. 3 of 4).
       const canSkip = event.assignments.some((a) => isDetailed(a) && a.required < a.bounties.length);
@@ -231,8 +241,9 @@ export class SeriesPage {
    * @param a - Assignment config.
    * @param index - Position in the campaign.
    * @param progress - Stored progress value.
+   * @param locked - Whether the previous assignment is not completed yet.
    */
-  private renderAssignment(eventId: string, a: Assignment, index: number, progress: number): string {
+  private renderAssignment(eventId: string, a: Assignment, index: number, progress: number, locked: boolean): string {
     const t = m();
     let detail: string;
     let options: string;
@@ -255,8 +266,9 @@ export class SeriesPage {
     return row(
       `<span class="row-title">${esc(tx(a.name))}</span>
        <small class="muted">${esc(detail)}</small>
-       ${note ? `<small class="note">${esc(note)}</small>` : ""}`,
-      `<select data-event="${eventId}" data-prop="assignment" data-index="${index}">${options}</select>`,
+       ${note ? `<small class="note">${esc(note)}</small>` : ""}
+       ${locked ? `<small class="muted">${esc(t.lockedAssignment)}</small>` : ""}`,
+      `<select data-event="${eventId}" data-prop="assignment" data-index="${index}"${locked ? " disabled" : ""}>${options}</select>`,
     );
   }
 
@@ -303,9 +315,18 @@ export class SeriesPage {
         case "plan":
           st.plan = value === "minimum" ? "minimum" : "full";
           break;
-        case "assignment":
+        case "assignment": {
           st.assignments[Number(target.dataset.index)] = num(value);
+          // Assignments unlock in order: lowering one below its completion
+          // threshold clears the later ones, and the card is redrawn so the
+          // right selects are enabled.
+          const event = this.config.events.find((e) => e.id === eventId);
+          if (event?.kind === "campaign") {
+            st.assignments = enforceAssignmentOrder(event.assignments, st.assignments);
+            if (committed) this.rerenderEvent(event);
+          }
           break;
+        }
         case "earnedMin":
           st.earnedMin = num(value);
           break;
@@ -316,6 +337,16 @@ export class SeriesPage {
     }
     saveState(this.config.id, this.state);
     this.updateResults();
+  }
+
+  /**
+   * Replace one event card with a freshly rendered one.
+   *
+   * @param event - Event to redraw.
+   */
+  private rerenderEvent(event: EventConfig): void {
+    const card = this.root.querySelector(`[data-summary="${CSS.escape(event.id)}"]`)?.closest("article");
+    if (card) card.outerHTML = this.renderEvent(event);
   }
 
   /** Recompute the forecast and refresh the results and event summaries. */
