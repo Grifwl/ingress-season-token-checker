@@ -10,7 +10,14 @@ import type { EventConfig, SeriesConfig } from "./types";
  * @returns One fixed event per occurrence.
  */
 function oneDayEvents(
-  base: { idPrefix: string; name: { en: string; es: string }; category: string; tokens: number; notes?: { en: string; es: string } },
+  base: {
+    idPrefix: string;
+    name: { en: string; es: string };
+    category: string;
+    tokens: number;
+    infoUrl?: string;
+    notes?: { en: string; es: string };
+  },
   occurrences: [string, string, string, string][],
 ): EventConfig[] {
   return occurrences.map(([suffix, en, es, date]) => ({
@@ -22,6 +29,7 @@ function oneDayEvents(
     inPerson: true,
     kind: "fixed",
     tokens: base.tokens,
+    infoUrl: base.infoUrl,
     notes: base.notes,
   }));
 }
@@ -31,11 +39,13 @@ function oneDayEvents(
  *
  * Sources:
  * - https://ingress.com/news/2026-cygnus
+ * - https://ingress.com/news/2026-cygnus-shardstorm
+ * - https://ingress.com/news/2026-cygnus-globalbattles
  * - https://ingress.com/news/2026-thekeeperswerefirst (Noise Floor details)
  *
- * Global Battles: the page only states 8,000 tokens over 3 assignments. The
- * per-assignment totals and the breakdowns of assignments 1 and 2 were read
- * in the Dispatch app; assignment 3 has no per-bounty details yet.
+ * Global Battles: the post gives the per-assignment totals (1,000 / 2,500 /
+ * 4,500). The bounty breakdowns of assignments 1 and 2 were read in the
+ * Dispatch app; assignment 3 has no per-bounty details yet.
  */
 export const cygnus: SeriesConfig = {
   id: "cygnus",
@@ -90,6 +100,7 @@ export const cygnus: SeriesConfig = {
         name: { en: "Shard Storm", es: "Shard Storm" },
         category: "shard-storm",
         tokens: 2500,
+        infoUrl: "https://ingress.com/news/2026-cygnus-shardstorm",
         notes: {
           en: "Tokens are only granted to agents attending in person.",
           es: "Solo los agentes que asisten en persona reciben tokens.",
@@ -109,7 +120,7 @@ export const cygnus: SeriesConfig = {
       startDate: "2026-10-01",
       endDate: "2026-10-28",
       inPerson: false,
-      infoUrl: "https://ingress.com/news/2026-cygnus",
+      infoUrl: "https://ingress.com/news/2026-cygnus-globalbattles",
       kind: "campaign",
       assignments: [
         {
