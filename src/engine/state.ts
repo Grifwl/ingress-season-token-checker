@@ -39,6 +39,10 @@ export interface EventState {
   earnedMin: number;
   /** Open events: upper estimate of tokens earned so far. */
   earnedMax: number;
+  /** Events with a bonus: whether the agent received it. */
+  bonusReceived: boolean;
+  /** Events with a bonus: tokens it granted (ignored unless received). */
+  bonusTokens: number;
 }
 
 /** Everything the agent has entered for one series. */
@@ -68,6 +72,8 @@ export function defaultEventState(event: EventConfig): EventState {
     plan: "full",
     earnedMin: 0,
     earnedMax: 0,
+    bonusReceived: false,
+    bonusTokens: 0,
   };
 }
 
@@ -115,6 +121,8 @@ export function normalizeState(config: SeriesConfig, raw: unknown): UserState {
       plan: saved.plan === "minimum" ? "minimum" : "full",
       earnedMin: num(saved.earnedMin),
       earnedMax: num(saved.earnedMax),
+      bonusReceived: typeof saved.bonusReceived === "boolean" ? saved.bonusReceived : def.bonusReceived,
+      bonusTokens: num(saved.bonusTokens),
     };
   }
 

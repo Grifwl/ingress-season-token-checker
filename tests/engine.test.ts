@@ -143,6 +143,25 @@ describe("forecast", () => {
     expect(f.pastBountyTokens).toEqual({ min: 400, max: 400 });
     expect(f.averagePerDay).toEqual({ min: 40, max: 40 });
   });
+
+  it("subtracts a declared bonus only once the event is over", () => {
+    const state = normalizeState(cygnus, {
+      currentTokens: 12000,
+      events: {
+        "global-battles": { assignments: [3, 3, 2], bonusReceived: true, bonusTokens: 1000 },
+      },
+    });
+    // Before the end the stored bonus is ignored.
+    const during = forecast(cygnus, state, "2026-10-20");
+    expect(during.evaluations.find((e) => e.event.id === "global-battles")!.bonus).toBe(0);
+
+    // After it: 8,000 from the campaign + 1,000 bonus, never forfeited.
+    const after = forecast(cygnus, state, "2026-11-01");
+    const gb = after.evaluations.find((e) => e.event.id === "global-battles")!;
+    expect(gb.bonus).toBe(1000);
+    expect(gb.forfeited).toEqual({ min: 0, max: 0 });
+    expect(after.eventsEarned).toEqual({ min: 9000, max: 9000 });
+  });
 });
 
 describe("assignment order", () => {

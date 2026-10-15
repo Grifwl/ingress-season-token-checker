@@ -157,6 +157,9 @@ const en = {
   toEarnSummary: (x: string) => `+${x} to earn`,
   availableSummary: (x: string) => `${x} still available`,
   lostSummary: (x: string) => `${x} lost`,
+  bonusReceived: (bonus: string) => `${bonus}: received`,
+  bonusTokens: "Bonus tokens received",
+  bonusSummary: (x: string) => `+${x} bonus`,
 
   forecast: "Forecast",
   warnEventsExceed:
@@ -264,6 +267,9 @@ const es: Messages = {
   toEarnSummary: (x) => `+${x} por obtener`,
   availableSummary: (x) => `${x} aún disponibles`,
   lostSummary: (x) => `${x} perdidos`,
+  bonusReceived: (bonus) => `${bonus}: recibido`,
+  bonusTokens: "Tokens extra recibidos",
+  bonusSummary: (x) => `+${x} de bonus`,
 
   forecast: "Previsión",
   warnEventsExceed:

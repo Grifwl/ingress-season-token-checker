@@ -140,7 +140,9 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
   const evaluations = config.events.map((e) =>
     evaluateEvent(e, state.events[e.id] ?? fallbackState(), today),
   );
-  const eventsEarned = add(...evaluations.map((e) => e.earned));
+  // Declared bonuses are already part of the current total, like any other
+  // earned event tokens, so they are subtracted along with them.
+  const eventsEarned = add(...evaluations.map((e) => add(e.earned, exact(e.bonus))));
   const committedRemaining = add(...evaluations.map((e) => e.committed));
   const undecided = evaluations.filter((e) => e.state.intent === "maybe" && e.potential.max > 0);
 
@@ -241,6 +243,8 @@ function fallbackState() {
     plan: "full" as const,
     earnedMin: 0,
     earnedMax: 0,
+    bonusReceived: false,
+    bonusTokens: 0,
   };
 }
 

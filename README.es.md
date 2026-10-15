@@ -55,6 +55,12 @@ configuración:
      - `open`: solo se conoce el máximo; los agentes indican lo que han
        obtenido.
 
+   Cualquier evento puede declarar además un `bonus`: una recompensa extra
+   de cantidad desconocida que solo reciben algunos agentes (por ejemplo,
+   un bonus por clasificación). La previsión nunca cuenta con él; cuando
+   el evento termina, los agentes pueden indicar si lo han recibido y
+   cuántos tokens les ha dado.
+
    Los textos que ve el usuario (nombres, notas, etiquetas) pueden ser una
    cadena simple o un mapa de traducciones `{ en, es }`.
 2. Regístrala en `src/series/index.ts`.

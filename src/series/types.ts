@@ -80,6 +80,25 @@ interface EventBase {
   infoUrl?: string;
   /** Free text shown to the user (caveats, assumptions...). */
   notes?: LocalizedText;
+  /** Extra reward of unknown amount granted on top of the event, if any. */
+  bonus?: EventBonus;
+}
+
+/**
+ * An extra reward granted to only some agents and whose amount is not known
+ * in advance, e.g. bonus tokens for the top of a leaderboard published after
+ * the event.
+ *
+ * It is kept apart from the event's own token figures: the forecast never
+ * counts on it, and once the event is over each agent can declare whether
+ * they received it and how many tokens it granted, so those tokens are not
+ * mistaken for daily bounty tokens.
+ */
+export interface EventBonus {
+  /** Short name, e.g. "Top 100 CAT-VI bonus". */
+  name: LocalizedText;
+  /** Who gets it and what is known about the amount. */
+  note: LocalizedText;
 }
 
 /** An all-or-nothing event, such as checking in at a First Saturday. */

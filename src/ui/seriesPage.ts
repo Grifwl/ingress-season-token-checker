@@ -218,6 +218,25 @@ export class SeriesPage {
       );
     }
 
+    // The bonus is only granted after the event, so it can only be declared
+    // once the event is over; until then its note just explains it.
+    if (event.bonus && ev.phase === "past") {
+      rows.push(`
+        <label class="row row-check">
+          <input type="checkbox" data-event="${id}" data-prop="bonusReceived" ${st.bonusReceived ? "checked" : ""}>
+          ${esc(t.bonusReceived(tx(event.bonus.name)))}
+        </label>`);
+      if (st.bonusReceived) {
+        rows.push(
+          row(
+            `<span class="row-title">${esc(t.bonusTokens)}</span>`,
+            `<input type="number" inputmode="numeric" min="0" step="10" data-event="${id}" data-prop="bonusTokens"
+              value="${st.bonusTokens || ""}" placeholder="0">`,
+          ),
+        );
+      }
+    }
+
     const phaseLabel = { upcoming: t.phaseUpcoming, active: t.phaseActive, past: t.phasePast }[ev.phase];
     const name = esc(tx(event.name));
     return `
@@ -229,6 +248,7 @@ export class SeriesPage {
         </div>
         <p class="muted">${esc(t.upTo(fmtDates(event.startDate, event.endDate), fmt(eventMaxTokens(event))))}</p>
         ${event.notes ? `<p class="note">${esc(tx(event.notes))}</p>` : ""}
+        ${event.bonus ? `<p class="note"><strong>${esc(tx(event.bonus.name))}:</strong> ${esc(tx(event.bonus.note))}</p>` : ""}
         <div class="rows">${rows.join("")}</div>
         <p class="event-summary" data-summary="${id}"></p>
       </article>`;
@@ -332,6 +352,16 @@ export class SeriesPage {
           break;
         case "earnedMax":
           st.earnedMax = num(value);
+          break;
+        case "bonusReceived": {
+          st.bonusReceived = Boolean(value);
+          // Show or hide the amount input.
+          const event = this.config.events.find((e) => e.id === eventId);
+          if (event && committed) this.rerenderEvent(event);
+          break;
+        }
+        case "bonusTokens":
+          st.bonusTokens = num(value);
           break;
       }
     }
@@ -543,6 +573,7 @@ function eventSummary(ev: EventEvaluation): string {
     );
   }
   if (ev.forfeited.max > 0) parts.push(span("neg", t.lostSummary(fmtRange(ev.forfeited))));
+  if (ev.bonus > 0) parts.push(span("pos", t.bonusSummary(fmt(ev.bonus))));
   return parts.join(" · ");
 }
 

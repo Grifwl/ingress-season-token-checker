@@ -27,6 +27,12 @@ export interface EventEvaluation {
    * "minimum" campaign plan skips.
    */
   forfeited: Range;
+  /**
+   * Bonus tokens the agent declared to have received (see
+   * {@link EventConfig.bonus}). Kept out of every other figure: it is never
+   * forecast and never counted as forfeited.
+   */
+  bonus: number;
 }
 
 /**
@@ -297,5 +303,20 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
     potential,
     committed: state.intent === "yes" ? potential : exact(0),
     forfeited,
+    bonus: eventBonus(event, state, phase),
   };
+}
+
+/**
+ * Bonus tokens declared for an event. A bonus is only granted once the event
+ * is over, so answers stored for an event that has not finished yet (e.g.
+ * after moving the forecast date back) are ignored.
+ *
+ * @param event - Event config.
+ * @param state - Agent's answers for the event.
+ * @param phase - Phase of the event at the forecast date.
+ * @returns Declared bonus tokens, 0 when none.
+ */
+export function eventBonus(event: EventConfig, state: EventState, phase: Phase): number {
+  return event.bonus && phase === "past" && state.bonusReceived ? state.bonusTokens : 0;
 }

@@ -121,6 +121,17 @@ export const cygnus: SeriesConfig = {
       endDate: "2026-10-28",
       inPerson: false,
       infoUrl: "https://ingress.com/news/2026-cygnus-globalbattles",
+      bonus: {
+        name: { en: "Top 100 CAT-VI bonus", es: "Bonus del top 100 CAT-VI" },
+        note: {
+          en:
+            "The top 100 CAT-VI agents of the leaderboard published after the operation get bonus tokens " +
+            "(amount not announced; at least one bounty must be claimed). Not counted in the forecast.",
+          es:
+            "Los 100 mejores agentes CAT-VI de la clasificación publicada tras la operación reciben tokens extra " +
+            "(cantidad no anunciada; hay que reclamar al menos un bounty). No se tienen en cuenta en la previsión.",
+        },
+      },
       kind: "campaign",
       assignments: [
         {
