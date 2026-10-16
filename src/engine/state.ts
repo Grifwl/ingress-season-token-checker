@@ -22,6 +22,11 @@ export interface EventState {
   /** Fixed events: tokens already granted (checked in). */
   completed: boolean;
   /**
+   * Fixed events whose tokens are granted later: the agent attended and is
+   * waiting for the tokens. Ignored once `completed` is set.
+   */
+  attended: boolean;
+  /**
    * Campaign events, one entry per assignment. For detailed assignments it is
    * the number of bounties done; for opaque ones it is 0 = not started,
    * 1 = in progress, 2 = completed.
@@ -67,6 +72,7 @@ export function defaultEventState(event: EventConfig): EventState {
   return {
     intent: event.inPerson ? "maybe" : "yes",
     completed: false,
+    attended: false,
     assignments: event.kind === "campaign" ? event.assignments.map(() => 0) : [],
     assignmentKinds: event.kind === "campaign" ? event.assignments.map(assignmentKind) : [],
     plan: "full",
@@ -104,6 +110,7 @@ export function normalizeState(config: SeriesConfig, raw: unknown): UserState {
     events[event.id] = {
       intent: saved.intent === "yes" || saved.intent === "maybe" || saved.intent === "no" ? saved.intent : def.intent,
       completed: typeof saved.completed === "boolean" ? saved.completed : def.completed,
+      attended: typeof saved.attended === "boolean" ? saved.attended : def.attended,
       assignments:
         event.kind === "campaign"
           ? enforceAssignmentOrder(

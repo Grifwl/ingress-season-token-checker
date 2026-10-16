@@ -106,6 +106,13 @@ export interface FixedEvent extends EventBase {
   kind: "fixed";
   /** Tokens granted for taking part. */
   tokens: number;
+  /**
+   * Whether the tokens are granted some time after the event rather than on
+   * the spot (e.g. First Saturday tokens arrive once the organiser's report
+   * is processed). Agents can then declare that they attended, and the
+   * forecast counts the tokens as still to come until they are received.
+   */
+  tokensGrantedLater?: boolean;
 }
 
 /**

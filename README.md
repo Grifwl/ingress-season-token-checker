@@ -45,7 +45,10 @@ Everything specific to a season lives in one config file:
    - dates and medal thresholds (any number of tiers);
    - daily bounty rewards (`dailyBounties`);
    - the events and their token rewards. There are three kinds:
-     - `fixed`: all-or-nothing, e.g. a First Saturday check-in;
+     - `fixed`: all-or-nothing, e.g. a First Saturday check-in. Set
+       `tokensGrantedLater` when the tokens arrive some time after the
+       event: agents can then mark that they attended, and the forecast
+       counts those tokens as still to come until they are received;
      - `campaign`: Dispatch campaigns with a known assignment structure.
        Assignments can be *detailed* (bounties + reward + required count) or
        *opaque* (only the total is known; the page flags them as missing

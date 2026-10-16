@@ -15,6 +15,7 @@ function oneDayEvents(
     name: { en: string; es: string };
     category: string;
     tokens: number;
+    tokensGrantedLater?: boolean;
     infoUrl?: string;
     notes?: { en: string; es: string };
   },
@@ -29,6 +30,7 @@ function oneDayEvents(
     inPerson: true,
     kind: "fixed",
     tokens: base.tokens,
+    tokensGrantedLater: base.tokensGrantedLater,
     infoUrl: base.infoUrl,
     notes: base.notes,
   }));
@@ -82,9 +84,16 @@ export const cygnus: SeriesConfig = {
     },
   ],
   events: [
-    // First Saturdays: 2,500 tokens for checking in, once per month.
+    // First Saturdays: 2,500 tokens for checking in, once per month. The
+    // tokens are granted some days after the event.
     ...oneDayEvents(
-      { idPrefix: "fs", name: { en: "First Saturday", es: "First Saturday" }, category: "first-saturday", tokens: 2500 },
+      {
+        idPrefix: "fs",
+        name: { en: "First Saturday", es: "First Saturday" },
+        category: "first-saturday",
+        tokens: 2500,
+        tokensGrantedLater: true,
+      },
       [
         ["oct", "October", "octubre", "2026-10-03"],
         ["nov", "November", "noviembre", "2026-11-07"],

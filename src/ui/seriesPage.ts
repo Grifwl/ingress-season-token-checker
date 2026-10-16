@@ -1,6 +1,7 @@
 import { tokensForBounties } from "../engine/bounties";
 import { todayIso, isIsoDate } from "../engine/dates";
 import {
+  canAwaitTokens,
   enforceAssignmentOrder,
   evaluateEvent,
   eventMaxTokens,
@@ -172,6 +173,17 @@ export class SeriesPage {
       );
     }
 
+    // Events whose tokens arrive later can be marked as attended, so the
+    // forecast keeps counting on them until they are received. The option
+    // disappears once the tokens are checked, since it no longer matters.
+    if (canAwaitTokens(event) && ev.phase !== "upcoming" && !st.completed) {
+      rows.push(`
+        <label class="row row-check">
+          <input type="checkbox" data-event="${id}" data-prop="attended" ${st.attended ? "checked" : ""}>
+          ${esc(t.attendedPending)}
+        </label>`);
+    }
+
     if (event.kind === "fixed" && ev.phase !== "upcoming") {
       rows.push(`
         <label class="row row-check">
@@ -329,8 +341,15 @@ export class SeriesPage {
         case "intent":
           st.intent = value as EventState["intent"];
           break;
-        case "completed":
+        case "completed": {
           st.completed = Boolean(value);
+          // Show or hide the "attended" checkbox.
+          const event = this.config.events.find((e) => e.id === eventId);
+          if (event && canAwaitTokens(event) && committed) this.rerenderEvent(event);
+          break;
+        }
+        case "attended":
+          st.attended = Boolean(value);
           break;
         case "plan":
           st.plan = value === "minimum" ? "minimum" : "full";
@@ -565,12 +584,12 @@ function eventSummary(ev: EventEvaluation): string {
   if (ev.phase !== "upcoming") {
     parts.push(span(ev.earned.max > 0 ? "pos" : "", t.earnedSummary(fmtRange(ev.earned))));
   }
-  if (ev.phase !== "past" && ev.state.intent !== "no" && ev.potential.max > 0) {
-    parts.push(
-      ev.state.intent === "yes"
-        ? span("pos", t.toEarnSummary(fmtRange(ev.potential)))
-        : span("", t.availableSummary(fmtRange(ev.potential))),
-    );
+  // Committed tokens include those of attended events still to be granted,
+  // which can be pending after the event is over.
+  if (ev.committed.max > 0) {
+    parts.push(span("pos", t.toEarnSummary(fmtRange(ev.committed))));
+  } else if (ev.phase !== "past" && ev.state.intent !== "no" && ev.potential.max > 0) {
+    parts.push(span("", t.availableSummary(fmtRange(ev.potential))));
   }
   if (ev.forfeited.max > 0) parts.push(span("neg", t.lostSummary(fmtRange(ev.forfeited))));
   if (ev.bonus > 0) parts.push(span("pos", t.bonusSummary(fmt(ev.bonus))));

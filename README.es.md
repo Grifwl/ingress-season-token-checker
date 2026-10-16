@@ -47,7 +47,10 @@ configuración:
    - las fechas y los umbrales de medalla (cualquier número de niveles);
    - las recompensas de los bounties diarios (`dailyBounties`);
    - los eventos y sus tokens. Hay tres tipos:
-     - `fixed`: todo o nada, por ejemplo el check-in de un First Saturday;
+     - `fixed`: todo o nada, por ejemplo el check-in de un First Saturday.
+       Indica `tokensGrantedLater` cuando los tokens llegan un tiempo
+       después del evento: los agentes pueden marcar que asistieron, y la
+       previsión cuenta esos tokens como pendientes hasta recibirlos;
      - `campaign`: campañas de Dispatch con estructura de asignaciones
        conocida. Las asignaciones pueden ser *detalladas* (bounties +
        recompensa + número necesario) u *opacas* (solo se conoce el total;

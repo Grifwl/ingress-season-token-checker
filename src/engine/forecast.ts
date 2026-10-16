@@ -144,7 +144,9 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
   // earned event tokens, so they are subtracted along with them.
   const eventsEarned = add(...evaluations.map((e) => add(e.earned, exact(e.bonus))));
   const committedRemaining = add(...evaluations.map((e) => e.committed));
-  const undecided = evaluations.filter((e) => e.state.intent === "maybe" && e.potential.max > 0);
+  const undecided = evaluations.filter(
+    (e) => !e.awaitingTokens && e.state.intent === "maybe" && e.potential.max > 0,
+  );
 
   // Step 1: tokens attributable to past daily bounties.
   const warnings: ForecastWarning[] = [];
@@ -238,6 +240,7 @@ function fallbackState() {
   return {
     intent: "no" as const,
     completed: false,
+    attended: false,
     assignments: [],
     assignmentKinds: [],
     plan: "full" as const,
@@ -297,7 +300,8 @@ export function bountyPlan(input: BountyPlanInput): BountyPlan {
 
 /**
  * Minimum in-person events needed to reach a target, assuming every remote
- * event not ruled out ("yes" or "maybe") is completed at its potential.
+ * event not ruled out ("yes" or "maybe") is completed at its potential and
+ * that the tokens of attended events are eventually granted.
  *
  * Events are picked greedily from the most to the least valuable, which
  * minimises the number of trips needed.
@@ -312,10 +316,13 @@ export function inPersonNeeded(
   base: number,
   evaluations: EventEvaluation[],
 ): InPersonPlan["needed"] {
-  const open = evaluations.filter((e) => e.state.intent !== "no" && e.potential.min > 0);
-  let total = base + open.filter((e) => !e.event.inPerson).reduce((s, e) => s + e.potential.min, 0);
+  const open = evaluations.filter((e) => (e.awaitingTokens || e.state.intent !== "no") && e.potential.min > 0);
+  // Events already attended and awaiting their tokens are certain, not a
+  // trip still to make, so they count towards the base like remote events.
+  const certain = (e: EventEvaluation) => !e.event.inPerson || e.awaitingTokens;
+  let total = base + open.filter(certain).reduce((s, e) => s + e.potential.min, 0);
 
-  const levers = open.filter((e) => e.event.inPerson).sort((a, b) => b.potential.min - a.potential.min);
+  const levers = open.filter((e) => !certain(e)).sort((a, b) => b.potential.min - a.potential.min);
   const counts = new Map<string, number>();
   for (const lever of levers) {
     if (total >= target) break;

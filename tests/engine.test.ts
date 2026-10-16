@@ -144,6 +144,36 @@ describe("forecast", () => {
     expect(f.averagePerDay).toEqual({ min: 40, max: 40 });
   });
 
+  it("counts attended events as committed until their tokens arrive", () => {
+    const state = normalizeState(cygnus, {
+      currentTokens: 400,
+      events: {
+        // Attended the October FS (stated intent ignored); tokens not granted yet.
+        "fs-oct": { intent: "no", attended: true },
+        "ss-oct-17": { attended: true },
+      },
+    });
+    const f = forecast(cygnus, state, "2026-10-11");
+    const fs = f.evaluations.find((e) => e.event.id === "fs-oct")!;
+    expect(fs.earned).toEqual({ min: 0, max: 0 });
+    expect(fs.committed).toEqual({ min: 2500, max: 2500 });
+    expect(fs.forfeited).toEqual({ min: 0, max: 0 });
+    // Not part of the current total: all 400 tokens came from bounties.
+    expect(f.pastBountyTokens).toEqual({ min: 400, max: 400 });
+    expect(f.undecided.some((e) => e.event.id === "fs-oct")).toBe(false);
+    // Shard Storms grant tokens on the spot: "attended" means nothing there.
+    expect(f.evaluations.find((e) => e.event.id === "ss-oct-17")!.awaitingTokens).toBe(false);
+
+    // Once received, the tokens move from committed to earned.
+    state.events["fs-oct"]!.completed = true;
+    state.currentTokens = 2900;
+    const after = forecast(cygnus, state, "2026-10-11");
+    const fsAfter = after.evaluations.find((e) => e.event.id === "fs-oct")!;
+    expect(fsAfter.earned).toEqual({ min: 2500, max: 2500 });
+    expect(fsAfter.committed).toEqual({ min: 0, max: 0 });
+    expect(after.committedRemaining.min).toBe(f.committedRemaining.min - 2500);
+  });
+
   it("subtracts a declared bonus only once the event is over", () => {
     const state = normalizeState(cygnus, {
       currentTokens: 12000,

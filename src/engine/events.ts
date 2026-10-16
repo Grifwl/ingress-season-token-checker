@@ -1,4 +1,4 @@
-import type { Assignment, DetailedAssignment, EventConfig } from "../series/types";
+import type { Assignment, DetailedAssignment, EventConfig, FixedEvent } from "../series/types";
 import { add, exact, sub, type Range } from "./range";
 import type { CampaignPlan, EventState } from "./state";
 
@@ -19,8 +19,18 @@ export interface EventEvaluation {
   earned: Range;
   /** Tokens still obtainable if the agent goes for it (following the plan). */
   potential: Range;
-  /** Part of `potential` the agent has committed to (intent "yes"). */
+  /**
+   * Part of `potential` the agent has committed to: intent "yes", or an
+   * event already attended whose tokens have not been granted yet.
+   */
   committed: Range;
+  /**
+   * Whether the agent attended the event and is waiting for its tokens (see
+   * {@link FixedEvent.tokensGrantedLater}). They are not part of the current
+   * total yet but will be part of the final one, so they are forecast as
+   * committed whatever the stated intent, even after the event is over.
+   */
+  awaitingTokens: boolean;
   /**
    * Tokens the agent will not get: what was left unearned in a finished
    * event, the whole remainder of an event marked "no", or the bounties a
@@ -253,12 +263,13 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
   let potential = exact(0);
   // Tokens the chosen campaign plan leaves behind even if the event is done.
   let planLoss = exact(0);
+  const awaitingTokens = isAwaitingTokens(event, state, phase);
 
   switch (event.kind) {
     case "fixed":
       // A one-day event can only have been completed once it has started.
       if (phase !== "upcoming" && state.completed) earned = exact(event.tokens);
-      else if (phase !== "past") potential = exact(event.tokens);
+      else if (phase !== "past" || awaitingTokens) potential = exact(event.tokens);
       break;
 
     case "campaign":
@@ -292,7 +303,8 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
   }
 
   let forfeited = planLoss;
-  if (phase === "past") forfeited = sub(exact(eventMaxTokens(event)), earned);
+  if (awaitingTokens) forfeited = exact(0);
+  else if (phase === "past") forfeited = sub(exact(eventMaxTokens(event)), earned);
   else if (state.intent === "no") forfeited = add(potential, planLoss);
 
   return {
@@ -301,10 +313,36 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
     phase,
     earned,
     potential,
-    committed: state.intent === "yes" ? potential : exact(0),
+    committed: awaitingTokens || state.intent === "yes" ? potential : exact(0),
+    awaitingTokens,
     forfeited,
     bonus: eventBonus(event, state, phase),
   };
+}
+
+/**
+ * Whether an event was attended and its tokens are still to be granted.
+ * Attendance can only be declared once the event has started, and stops
+ * mattering as soon as the tokens are marked as received.
+ *
+ * @param event - Event config.
+ * @param state - Agent's answers for the event.
+ * @param phase - Phase of the event at the forecast date.
+ * @returns `true` while the tokens are pending.
+ */
+export function isAwaitingTokens(event: EventConfig, state: EventState, phase: Phase): boolean {
+  return canAwaitTokens(event) && phase !== "upcoming" && state.attended && !state.completed;
+}
+
+/**
+ * Whether agents can declare attendance to an event before getting its
+ * tokens.
+ *
+ * @param event - Event config.
+ * @returns `true` for fixed events whose tokens are granted later.
+ */
+export function canAwaitTokens(event: EventConfig): event is FixedEvent {
+  return event.kind === "fixed" && event.tokensGrantedLater === true;
 }
 
 /**

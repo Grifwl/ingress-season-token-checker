@@ -138,6 +138,7 @@ const en = {
   intentMaybe: "Not sure",
   intentNo: "I won't",
   gotTokens: "I got these tokens",
+  attendedPending: "I attended; tokens not received yet",
   bountiesDone: (k: number, n: number) => `${k} of ${n} bounties`,
   detailedAssignment: (bounties: string, reward: string, required: number, n: number) =>
     `${bounties} + ${reward} on completing ${required} of ${n}`,
@@ -248,6 +249,7 @@ const es: Messages = {
   intentMaybe: "No lo sé",
   intentNo: "No lo haré",
   gotTokens: "Ya tengo estos tokens",
+  attendedPending: "Asistí; aún no he recibido los tokens",
   bountiesDone: (k, n) => `${k} de ${n} bounties`,
   detailedAssignment: (bounties, reward, required, n) =>
     `${bounties} + ${reward} al completar ${required} de ${n}`,
