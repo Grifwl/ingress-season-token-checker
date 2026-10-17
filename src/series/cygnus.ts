@@ -46,8 +46,8 @@ function oneDayEvents(
  * - https://ingress.com/news/2026-thekeeperswerefirst (Noise Floor details)
  *
  * Global Battles: the post gives the per-assignment totals (1,000 / 2,500 /
- * 4,500). The bounty breakdowns of assignments 1 and 2 were read in the
- * Dispatch app; assignment 3 has no per-bounty details yet.
+ * 4,500). The bounty breakdowns of the three assignments were read in
+ * the Dispatch app.
  */
 export const cygnus: SeriesConfig = {
   id: "cygnus",
@@ -155,7 +155,12 @@ export const cygnus: SeriesConfig = {
           reward: 1000,
           required: 3,
         },
-        { name: { en: "Assignment 3 (200 battle beacons)", es: "Asignación 3 (200 balizas de batalla)" }, total: 4500 },
+        {
+          name: { en: "Assignment 3 (200 battle beacons)", es: "Asignación 3 (200 balizas de batalla)" },
+          bounties: [900, 900, 900],
+          reward: 1800,
+          required: 3,
+        },
       ],
     },
     {

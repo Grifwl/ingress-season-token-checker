@@ -178,7 +178,7 @@ describe("forecast", () => {
     const state = normalizeState(cygnus, {
       currentTokens: 12000,
       events: {
-        "global-battles": { assignments: [3, 3, 2], bonusReceived: true, bonusTokens: 1000 },
+        "global-battles": { assignments: [3, 3, 3], bonusReceived: true, bonusTokens: 1000 },
       },
     });
     // Before the end the stored bonus is ignored.
@@ -203,19 +203,20 @@ describe("assignment order", () => {
     expect(enforceAssignmentOrder(gb.assignments, [2, 2, 1])).toEqual([2, 0, 0]);
     // Assignment 1 completed, 2 at 2 of 3 bounties: 3 stays not started.
     expect(enforceAssignmentOrder(gb.assignments, [3, 2, 2])).toEqual([3, 2, 0]);
-    // Assignment 2 at the required 3 bounties unlocks assignment 3 (opaque).
+    // Assignment 2 at the required 3 bounties unlocks assignment 3.
     expect(enforceAssignmentOrder(gb.assignments, [3, 3, 1])).toEqual([3, 3, 1]);
   });
 
   it("converts progress saved before per-bounty details were known", () => {
-    // Assignment 1 was saved as an opaque "completed" (2); it is now detailed.
+    // Assignments 1 and 3 were saved as opaque ("completed" and "not
+    // started"); both are now detailed.
     const state = normalizeState(cygnus, {
       events: {
         "global-battles": { assignments: [2, 2, 0], assignmentKinds: ["opaque", "detailed", "opaque"] },
       },
     });
     expect(state.events["global-battles"]!.assignments).toEqual([3, 2, 0]);
-    expect(state.events["global-battles"]!.assignmentKinds).toEqual(["detailed", "detailed", "opaque"]);
+    expect(state.events["global-battles"]!.assignmentKinds).toEqual(["detailed", "detailed", "detailed"]);
   });
 
   it("applies the order to saved answers", () => {
