@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tokensForBounties } from "../src/engine/bounties";
 import { assignmentEarned, assignmentRemaining, eventMaxTokens } from "../src/engine/events";
-import { bountyPlan, forecast } from "../src/engine/forecast";
+import { bountyPlan, daysToReach, forecast } from "../src/engine/forecast";
 import { normalizeState } from "../src/engine/state";
 import { allSeries } from "../src/series";
 import { cygnus } from "../src/series/cygnus";
@@ -98,6 +98,27 @@ describe("bountyPlan", () => {
       relaxedDays: 0,
       shortfall: 100,
     });
+  });
+});
+
+describe("daysToReach", () => {
+  const base = { target: 1000, current: 800, remainingDays: 10, todayInSeason: true, todayTokens: 0 };
+
+  it("counts today while its bounties still add tokens", () => {
+    // 200 missing: today + 4 more days at 40, today + 3 more days at 60.
+    expect(daysToReach({ ...base, rate: 40 })).toBe(5);
+    expect(daysToReach({ ...base, rate: 60 })).toBe(4);
+  });
+
+  it("skips today once its bounties are done", () => {
+    expect(daysToReach({ ...base, rate: 40, todayTokens: 40 })).toBe(5);
+    // Today's last bounty still adds 20 tokens at the maximum rate.
+    expect(daysToReach({ ...base, rate: 60, todayTokens: 40 })).toBe(4);
+  });
+
+  it("returns null when the season ends first", () => {
+    expect(daysToReach({ ...base, rate: 40, remainingDays: 3 })).toBeNull();
+    expect(daysToReach({ ...base, rate: 60, remainingDays: 3 })).toBe(4);
   });
 });
 

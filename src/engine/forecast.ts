@@ -29,6 +29,17 @@ export interface InPersonPlan {
   needed: { category: string; count: number }[] | null;
 }
 
+/** Days of daily bounties alone needed to reach a tier at a given rate. */
+export interface BountyDays {
+  /** Daily bounties assumed for every day. */
+  bountiesPerDay: number;
+  /**
+   * Days needed counting today while its bounties still add tokens, or
+   * `null` when the season ends first.
+   */
+  days: number | null;
+}
+
 /** Outlook for one medal tier. */
 export interface TierAnalysis {
   tier: MedalTier;
@@ -44,6 +55,11 @@ export interface TierAnalysis {
   bountyPlan: { pessimistic: BountyPlan; optimistic: BountyPlan };
   /** In-person events needed at the relaxed and at the maximum bounty rate. */
   inPerson: InPersonPlan[];
+  /**
+   * Days needed with daily bounties alone (no event tokens) at the relaxed
+   * and at the maximum bounty rate.
+   */
+  bountyDays: BountyDays[];
 }
 
 /**
@@ -206,6 +222,17 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
           needed: inPersonNeeded(tier.tokens, current + futureBounties(exact(rate)).min, evaluations),
         };
       }),
+      bountyDays: rates.map((count) => ({
+        bountiesPerDay: count,
+        days: daysToReach({
+          target: tier.tokens,
+          current,
+          rate: tokensForBounties(bounty, count),
+          remainingDays,
+          todayInSeason,
+          todayTokens,
+        }),
+      })),
     };
   });
 
@@ -296,6 +323,42 @@ export function bountyPlan(input: BountyPlanInput): BountyPlan {
     return { fullDays: remainingDays + 1, relaxedDays: 0, shortfall: 0 };
   }
   return { fullDays: null, relaxedDays: 0, shortfall: leftover - todayExtra };
+}
+
+/** Inputs of {@link daysToReach}. */
+interface DaysToReachInput {
+  target: number;
+  /** Current tokens. */
+  current: number;
+  /** Tokens per day from daily bounties. */
+  rate: number;
+  remainingDays: number;
+  todayInSeason: boolean;
+  todayTokens: number;
+}
+
+/**
+ * Days of daily bounties alone needed to reach a target at a fixed rate.
+ *
+ * Event tokens are deliberately left out: their dates and amounts are
+ * uncertain, while daily bounties give a figure the agent can count on.
+ * Today counts as the first day only while doing the rest of its bounties
+ * still adds tokens at this rate.
+ *
+ * @param input - Target, current tokens, daily rate and calendar position.
+ * @returns Days needed (0 if already reached), or `null` when the season
+ *   ends first.
+ */
+export function daysToReach(input: DaysToReachInput): number | null {
+  const { target, current, rate, remainingDays, todayInSeason, todayTokens } = input;
+  const missing = target - current;
+  if (missing <= 0) return 0;
+  if (rate <= 0) return null;
+
+  const todayGain = todayInSeason ? Math.max(0, rate - todayTokens) : 0;
+  const days = todayGain > 0 ? 1 + Math.ceil(Math.max(0, missing - todayGain) / rate) : Math.ceil(missing / rate);
+  const available = remainingDays + (todayGain > 0 ? 1 : 0);
+  return days <= available ? days : null;
 }
 
 /**

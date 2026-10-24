@@ -11,6 +11,7 @@ import {
 } from "../engine/events";
 import {
   forecast,
+  type BountyDays,
   type BountyPlan,
   type Forecast,
   type ForecastWarning,
@@ -517,6 +518,10 @@ export class SeriesPage {
       cls = needed === 0 ? "tier-ok" : needed === null ? "tier-no" : "tier-maybe";
     }
 
+    // Countdown with daily bounties alone, only when the tier is close
+    // enough to be reached that way before the season ends.
+    if (tier.bountyDays.some((d) => d.days !== null)) lines.push(this.describeBountyDays(tier.bountyDays));
+
     // Bounty effort only matters when the pace is not clearly enough.
     if (tier.atPace !== "yes") {
       lines.push(this.describeBountyPlan(tier.bountyPlan.pessimistic, tier.bountyPlan.optimistic, f));
@@ -529,6 +534,19 @@ export class SeriesPage {
       lines.push(...tier.inPerson.map((p) => this.describeInPerson(p)));
     }
     return `<div class="tier ${cls}">${head}${lines.map((l) => `<p>${l}</p>`).join("")}</div>`;
+  }
+
+  /**
+   * Explain in how many days daily bounties alone reach a tier.
+   *
+   * @param days - Days needed at each bounty rate.
+   */
+  private describeBountyDays(days: BountyDays[]): string {
+    const t = m();
+    const parts = days.map((d) =>
+      d.days === null ? esc(t.bountyDaysNever(d.bountiesPerDay)) : t.bountyDaysIn(d.days, d.bountiesPerDay),
+    );
+    return `${esc(t.bountyDaysPrefix)} ${parts.join(esc(t.and))}.`;
   }
 
   /**

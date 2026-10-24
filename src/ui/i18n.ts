@@ -192,6 +192,10 @@ const en = {
     `≈ At your current pace you end at ${projection}: you only get there in the best case.`,
   paceNo: (projection: string, missing: string) =>
     `✘ At your current pace you end at ${projection}, <strong>${missing} short</strong>.`,
+  bountyDaysPrefix: "With daily bounties alone you get there",
+  bountyDaysIn: (days: number, n: number) =>
+    `in <strong>${days} ${pl(days, "day", "days")}</strong> with ${n} a day`,
+  bountyDaysNever: (n: number) => `not before the season ends with ${n} a day`,
   planRelaxedEnough: (relaxed: number, tokens: string) =>
     `${relaxed} bounties a day (${tokens} tokens) are enough`,
   planFullDays: (all: number, days: number, relaxed: number, otherDays: number) =>
@@ -303,6 +307,9 @@ const es: Messages = {
     `≈ A tu ritmo actual acabas con ${projection}: solo llegas en el mejor caso.`,
   paceNo: (projection, missing) =>
     `✘ A tu ritmo actual acabas con ${projection}; <strong>te faltan ${missing}</strong>.`,
+  bountyDaysPrefix: "Solo con bounties diarios llegas",
+  bountyDaysIn: (days, n) => `en <strong>${days} ${pl(days, "día", "días")}</strong> con ${n} al día`,
+  bountyDaysNever: (n) => `no antes de que acabe la temporada con ${n} al día`,
   planRelaxedEnough: (relaxed, tokens) => `basta con ${relaxed} bounties al día (${tokens} tokens)`,
   planFullDays: (all, days, relaxed, otherDays) =>
     `haz los ${all} bounties <strong>${days} ${pl(days, "día", "días")}</strong>; ` +
