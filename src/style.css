@@ -162,6 +162,8 @@ input, select {
 
 table.mini { border-collapse: collapse; font-size: 0.9rem; }
 table.mini th, table.mini td { border-bottom: 1px solid var(--border); padding: 2px 12px 2px 0; text-align: left; }
+.bounty-tables { display: flex; flex-wrap: wrap; gap: 8px 32px; align-items: flex-start; }
+table.mini caption { text-align: left; font-weight: 600; padding-bottom: 2px; }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin: 0; }
 .stats div { background: var(--bg); border-radius: 8px; padding: 8px 12px; }

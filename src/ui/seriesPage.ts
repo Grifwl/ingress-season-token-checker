@@ -124,13 +124,22 @@ export class SeriesPage {
     const t = m();
     const b = this.config.dailyBounties;
     const all = b.bountyTokens.length;
-    const rows = b.bountyTokens
-      .map((_, i) => i + 1)
-      .map((n) => {
-        const paid = n > b.freeCount ? ` <span class="badge">${esc(t.paidMark)}</span>` : "";
-        return `<tr><td>${n}${paid}</td><td>${fmt(tokensForBounties(b, n))}</td></tr>`;
-      })
-      .join("");
+    /**
+     * One table of bounty counts and their daily tokens. Free and paid
+     * bounties get a table each, side by side, so the list stays short.
+     */
+    const table = (counts: number[], caption: string | null) => `
+      <table class="mini">
+        ${caption ? `<caption>${esc(caption)}</caption>` : ""}
+        <thead><tr><th>${esc(t.bountiesColumn)}</th><th>${esc(t.tokensPerDayColumn)}</th></tr></thead>
+        <tbody>${counts.map((n) => `<tr><td>${n}</td><td>${fmt(tokensForBounties(b, n))}</td></tr>`).join("")}</tbody>
+      </table>`;
+    const counts = b.bountyTokens.map((_, i) => i + 1);
+    const free = counts.filter((n) => n <= b.freeCount);
+    const paid = counts.filter((n) => n > b.freeCount);
+    const tables = paid.length
+      ? `<div class="bounty-tables">${table(free, t.freeBountiesTitle)}${table(paid, t.paidBountiesTitle)}</div>`
+      : table(free, null);
     // Unlock prices are listed only when the series has paid bounties.
     const pricing = b.unlockPricing;
     const paidInfo =
@@ -145,10 +154,7 @@ export class SeriesPage {
         <h3>${esc(t.dailyBounties)}</h3>
         <p class="muted">${t.dailyBountiesInfo(b.relaxedCount)}</p>
         ${paidInfo}
-        <table class="mini">
-          <thead><tr><th>${esc(t.bountiesColumn)}</th><th>${esc(t.tokensPerDayColumn)}</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        ${tables}
       </div>`;
   }
 

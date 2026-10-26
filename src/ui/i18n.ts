@@ -130,7 +130,8 @@ const en = {
   unlockPack: (days: number, cmu: string) => `${days} ${pl(days, "day", "days")} for ${cmu} CMU`,
   bountiesColumn: "Bounties",
   tokensPerDayColumn: "Tokens / day",
-  paidMark: "paid",
+  freeBountiesTitle: "Free",
+  paidBountiesTitle: "Paid",
   cost: (cmu: string, eur: string, eurCore: string, subs: number, subsEur: string) =>
     `≈ ${cmu} CMU: ${eur}, or ${eurCore} with C.O.R.E. ` +
     `(using the CMU of ${subs} ${pl(subs, "subscription", "subscriptions")}, ${subsEur})`,
@@ -263,7 +264,8 @@ const es: Messages = {
   unlockPack: (days, cmu) => `${days} ${pl(days, "día", "días")} por ${cmu} CMU`,
   bountiesColumn: "Bounties",
   tokensPerDayColumn: "Tokens / día",
-  paidMark: "de pago",
+  freeBountiesTitle: "Gratuitos",
+  paidBountiesTitle: "De pago",
   cost: (cmu, eur, eurCore, subs, subsEur) =>
     `≈ ${cmu} CMU: ${eur}, o ${eurCore} con C.O.R.E. ` +
     `(usando los CMU de ${subs} ${pl(subs, "suscripción", "suscripciones")}, ${subsEur})`,
