@@ -205,8 +205,8 @@ const en = {
   paceYes: "✔ You get there at your current pace with the events you committed to.",
   paceMaybe: (projection: string) =>
     `≈ At your current pace you end at ${projection}: you only get there in the best case.`,
-  paceNo: (projection: string, missing: string) =>
-    `✘ At your current pace you end at ${projection}, <strong>${missing} short</strong>.`,
+  paceNo: (symbol: string, projection: string, missing: string) =>
+    `${symbol} At your current pace you end at ${projection}, <strong>${missing} short</strong>.`,
   bountyDaysPrefix: "With daily bounties alone you get there",
   bountyDaysIn: (days: number, n: number) =>
     `in <strong>${days} ${pl(days, "day", "days")}</strong> with ${n} a day`,
@@ -338,8 +338,8 @@ const es: Messages = {
   paceYes: "✔ Llegas con tu ritmo actual y los eventos a los que te has comprometido.",
   paceMaybe: (projection) =>
     `≈ A tu ritmo actual acabas con ${projection}: solo llegas en el mejor caso.`,
-  paceNo: (projection, missing) =>
-    `✘ A tu ritmo actual acabas con ${projection}; <strong>te faltan ${missing}</strong>.`,
+  paceNo: (symbol, projection, missing) =>
+    `${symbol} A tu ritmo actual acabas con ${projection}; <strong>te faltan ${missing}</strong>.`,
   bountyDaysPrefix: "Solo con bounties diarios llegas",
   bountyDaysIn: (days, n) => `en <strong>${days} ${pl(days, "día", "días")}</strong> con ${n} al día`,
   bountyDaysNever: (n) => `no antes de que acabe la temporada con ${n} al día`,

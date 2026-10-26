@@ -527,7 +527,13 @@ export class SeriesPage {
       lines.push(t.paceMaybe(fmtRange(f.projection)));
     } else if (tier.atPace === "no" && f.projection) {
       const missing = { min: tier.tier.tokens - f.projection.max, max: tier.tier.tokens - f.projection.min };
-      lines.push(t.paceNo(fmtRange(f.projection), fmtRange(missing)));
+      // The pace falls short, but if extra bounties (free or paid) still get
+      // there with the committed events, the tier is not out of reach: it is
+      // shown as a warning with a neutral symbol rather than as a failure.
+      const plan = tier.bountyPlan.pessimistic;
+      const reachable = plan.fullDays !== null || plan.paidDays !== null;
+      if (reachable) cls = "tier-maybe";
+      lines.push(t.paceNo(reachable ? "→" : "✘", fmtRange(f.projection), fmtRange(missing)));
     } else {
       // No pace yet (season not started or first day): judge the tier by the
       // effort the committed plan requires instead.
