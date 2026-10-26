@@ -132,8 +132,8 @@ const en = {
   tokensPerDayColumn: "Tokens / day",
   freeBountiesTitle: "Free",
   paidBountiesTitle: "Paid",
-  cost: (cmu: string, eur: string, eurCore: string, subs: number, subsEur: string) =>
-    `≈ ${cmu} CMU: ${eur}, or ${eurCore} with C.O.R.E. ` +
+  cost: (cmu: string, eur: string, eurCore: string | null, subs: number, subsEur: string) =>
+    `≈ ${cmu} CMU: ${eur}, or ${eurCore === null ? "no extra cost" : eurCore} with C.O.R.E. ` +
     `(using the CMU of ${subs} ${pl(subs, "subscription", "subscriptions")}, ${subsEur})`,
 
   phaseUpcoming: "Upcoming",
@@ -267,7 +267,7 @@ const es: Messages = {
   freeBountiesTitle: "Gratuitos",
   paidBountiesTitle: "De pago",
   cost: (cmu, eur, eurCore, subs, subsEur) =>
-    `≈ ${cmu} CMU: ${eur}, o ${eurCore} con C.O.R.E. ` +
+    `≈ ${cmu} CMU: ${eur}, o ${eurCore === null ? "sin coste adicional" : eurCore} con C.O.R.E. ` +
     `(usando los CMU de ${subs} ${pl(subs, "suscripción", "suscripciones")}, ${subsEur})`,
 
   phaseUpcoming: "Próximamente",

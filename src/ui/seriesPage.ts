@@ -577,7 +577,7 @@ export class SeriesPage {
         ? esc(t.bountyDaysNever(d.bountiesPerDay))
         : t.bountyDaysIn(d.days, d.bountiesPerDay) + costSuffix(d.cost),
     );
-    return `${esc(t.bountyDaysPrefix)} ${parts.join(esc(t.and))}.`;
+    return `${esc(t.bountyDaysPrefix)} ${joinList(parts)}.`;
   }
 
   /**
@@ -623,7 +623,7 @@ export class SeriesPage {
       const label = cat ? tx(count === 1 ? cat.label : cat.pluralLabel) : category;
       return `<strong>${count} ${esc(label)}</strong>`;
     });
-    return `${prefix} ${t.inPersonNeeded(list.join(esc(t.and)))}`;
+    return `${prefix} ${t.inPersonNeeded(joinList(list))}`;
   }
 }
 
@@ -679,7 +679,8 @@ function costText(cost: PaidDaysCost): string {
   return m().cost(
     fmt(cost.cmu),
     fmtEur(cost.eurCents),
-    fmtEur(cost.eurCentsWithCore),
+    // Nothing to buy beyond the subscriptions: say so instead of "0,00 €".
+    cost.eurCentsWithCore > 0 ? fmtEur(cost.eurCentsWithCore) : null,
     cost.coreSubscriptions,
     fmtEur(cost.coreCents),
   );
@@ -735,4 +736,16 @@ function span(cls: string, text: string): string {
  */
 function option(value: string, label: string, selected: boolean): string {
   return `<option value="${esc(value)}"${selected ? " selected" : ""}>${esc(label)}</option>`;
+}
+
+/**
+ * Join HTML fragments as a natural-language list: commas between items and
+ * the translated "and" before the last one ("a, b and c").
+ *
+ * @param items - Already escaped HTML fragments.
+ * @returns The joined list.
+ */
+function joinList(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")}${esc(m().and)}${items.at(-1)}`;
 }
