@@ -31,6 +31,29 @@ export function daysBetween(from: string, to: string): number {
 }
 
 /**
+ * Shift a date by a number of days.
+ *
+ * @param iso - Start date.
+ * @param days - Days to add (negative to go back).
+ * @returns The shifted date as `YYYY-MM-DD`.
+ */
+export function addDays(iso: string, days: number): string {
+  return new Date((dayNumber(iso) + days) * MS_PER_DAY).toISOString().slice(0, 10);
+}
+
+/**
+ * Number of calendar months touched by a range of dates.
+ *
+ * @param from - First date.
+ * @param to - Last date (not earlier than `from`).
+ * @returns e.g. 2 for 30 October – 2 November.
+ */
+export function monthsSpanned(from: string, to: string): number {
+  const index = (iso: string) => Number(iso.slice(0, 4)) * 12 + Number(iso.slice(5, 7));
+  return index(to) - index(from) + 1;
+}
+
+/**
  * Today's date in the browser's local time zone, which matches the agent's
  * daily bounty reset better than UTC does.
  *

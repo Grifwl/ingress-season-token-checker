@@ -18,10 +18,11 @@ import {
   type InPersonPlan,
   type TierAnalysis,
 } from "../engine/forecast";
+import type { PaidDaysCost } from "../engine/pricing";
 import type { Range } from "../engine/range";
 import { normalizeState, type EventState, type UserState } from "../engine/state";
 import type { Assignment, EventConfig, SeriesConfig } from "../series/types";
-import { esc, fmt, fmtDates, fmtRange } from "./format";
+import { esc, fmt, fmtDates, fmtEur, fmtRange } from "./format";
 import { getLang, LANGUAGES, m, setLang, tx, type Lang } from "./i18n";
 import { loadState, saveState } from "./storage";
 
@@ -95,9 +96,11 @@ export class SeriesPage {
             <label>${esc(t.bountiesToday)}
               <select data-field="bountiesToday">
                 ${[0, ...bountyCounts]
-                  .map((n) =>
-                    option(String(n), t.bountiesOption(n, fmt(tokensForBounties(c.dailyBounties, n))), this.state.bountiesToday === n),
-                  )
+                  .map((n) => {
+                    const tokens = fmt(tokensForBounties(c.dailyBounties, n));
+                    const label = n > c.dailyBounties.freeCount ? t.bountiesOptionPaid(n, tokens) : t.bountiesOption(n, tokens);
+                    return option(String(n), label, this.state.bountiesToday === n);
+                  })
                   .join("")}
               </select>
             </label>
@@ -116,18 +119,32 @@ export class SeriesPage {
     this.updateResults();
   }
 
-  /** Explain how daily bounties are rewarded. */
+  /** Explain how daily bounties are rewarded, and what the paid ones cost. */
   private renderDailyBounties(): string {
     const t = m();
     const b = this.config.dailyBounties;
+    const all = b.bountyTokens.length;
     const rows = b.bountyTokens
       .map((_, i) => i + 1)
-      .map((n) => `<tr><td>${n}</td><td>${fmt(tokensForBounties(b, n))}</td></tr>`)
+      .map((n) => {
+        const paid = n > b.freeCount ? ` <span class="badge">${esc(t.paidMark)}</span>` : "";
+        return `<tr><td>${n}${paid}</td><td>${fmt(tokensForBounties(b, n))}</td></tr>`;
+      })
       .join("");
+    // Unlock prices are listed only when the series has paid bounties.
+    const pricing = b.unlockPricing;
+    const paidInfo =
+      b.freeCount < all && pricing
+        ? `<p class="muted">${esc(
+            t.paidBountiesInfo(b.freeCount + 1, all, pricing.packs.map((p) => t.unlockPack(p.days, fmt(p.cmu))).join(" · ")),
+          )}</p>
+          <p class="note">${esc(t.costNote)}</p>`
+        : "";
     return `
       <div class="source">
         <h3>${esc(t.dailyBounties)}</h3>
         <p class="muted">${t.dailyBountiesInfo(b.relaxedCount)}</p>
+        ${paidInfo}
         <table class="mini">
           <thead><tr><th>${esc(t.bountiesColumn)}</th><th>${esc(t.tokensPerDayColumn)}</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -544,7 +561,9 @@ export class SeriesPage {
   private describeBountyDays(days: BountyDays[]): string {
     const t = m();
     const parts = days.map((d) =>
-      d.days === null ? esc(t.bountyDaysNever(d.bountiesPerDay)) : t.bountyDaysIn(d.days, d.bountiesPerDay),
+      d.days === null
+        ? esc(t.bountyDaysNever(d.bountiesPerDay))
+        : t.bountyDaysIn(d.days, d.bountiesPerDay) + costSuffix(d.cost),
     );
     return `${esc(t.bountyDaysPrefix)} ${parts.join(esc(t.and))}.`;
   }
@@ -559,9 +578,16 @@ export class SeriesPage {
   private describeBountyPlan(worst: BountyPlan, best: BountyPlan, f: Forecast): string {
     const t = m();
     const b = this.config.dailyBounties;
-    const all = b.bountyTokens.length;
+    const all = b.freeCount;
+    const hasPaid = b.freeCount < b.bountyTokens.length;
     const text = (p: BountyPlan) => {
-      if (p.fullDays === null) return t.planShort(all, fmt(p.shortfall));
+      if (p.fullDays === null) {
+        // Free bounties fall short: say whether paid ones would close the gap.
+        let paid = "";
+        if (hasPaid && p.paidDays !== null) paid = t.planPaidDays(p.paidDays) + costSuffix(p.paidCost);
+        else if (hasPaid) paid = t.planPaidShort(fmt(p.paidShortfall));
+        return t.planShort(all, fmt(p.shortfall)) + paid;
+      }
       if (p.fullDays === 0) return t.planRelaxedEnough(b.relaxedCount, fmt(f.dailyRelaxed));
       return t.planFullDays(all, p.fullDays, b.relaxedCount, p.relaxedDays);
     };
@@ -577,7 +603,7 @@ export class SeriesPage {
    */
   private describeInPerson(p: InPersonPlan): string {
     const t = m();
-    const prefix = esc(t.inPersonPrefix(p.bountiesPerDay));
+    const prefix = esc(t.inPersonPrefix(p.bountiesPerDay, p.cost ? ` (${costText(p.cost)})` : ""));
     if (p.needed === null) return `${prefix} ${esc(t.inPersonImpossible)}`;
     if (p.needed.length === 0) return `${prefix} ${esc(t.inPersonNone)}`;
     const list = p.needed.map(({ category, count }) => {
@@ -626,7 +652,35 @@ function warningText(w: ForecastWarning): string {
       return m().warnEventsExceed;
     case "unexplained-tokens":
       return m().warnUnexplained(fmt(w.dailyMax));
+    case "paid-bounties":
+      return m().warnPaidBounties(w.days) + (w.cost ? ` ${costText(w.cost)}` : "");
   }
+}
+
+/**
+ * Describe the cost of unlocking paid bounties.
+ *
+ * @param cost - Cheapest cost.
+ * @returns e.g. "≈ 26,000 CMU: €19.16, or €22.06 with C.O.R.E.".
+ */
+function costText(cost: PaidDaysCost): string {
+  return m().cost(
+    fmt(cost.cmu),
+    fmtEur(cost.eurCents),
+    fmtEur(cost.eurCentsWithCore),
+    cost.coreSubscriptions,
+    fmtEur(cost.coreCents),
+  );
+}
+
+/**
+ * Cost of paid bounties as an HTML suffix in parentheses.
+ *
+ * @param cost - Cheapest cost, or `null` when nothing has to be paid.
+ * @returns e.g. " (≈ 1,500 CMU: …)", or an empty string.
+ */
+function costSuffix(cost: PaidDaysCost | null): string {
+  return cost ? ` <span class="muted">(${esc(costText(cost))})</span>` : "";
 }
 
 /**

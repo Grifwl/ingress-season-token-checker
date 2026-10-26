@@ -13,6 +13,16 @@ export function fmt(n: number): string {
 }
 
 /**
+ * Format an amount of euros.
+ *
+ * @param cents - Amount in euro cents.
+ * @returns e.g. "€19.16" (English) or "19,16 €" (Spanish).
+ */
+export function fmtEur(cents: number): string {
+  return new Intl.NumberFormat(locale(), { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+/**
  * Format an interval, collapsing it to one value when both ends match.
  *
  * @param r - Interval.

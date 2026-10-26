@@ -1,21 +1,34 @@
 import type { MedalTier, SeriesConfig } from "../series/types";
-import { maxDailyTokens, relaxedDailyTokens, tokensForBounties } from "./bounties";
-import { daysBetween } from "./dates";
+import { freeDailyTokens, maxDailyTokens, relaxedDailyTokens, tokensForBounties } from "./bounties";
+import { addDays, daysBetween, monthsSpanned } from "./dates";
 import { evaluateEvent, type EventEvaluation } from "./events";
+import { paidDaysCost, type PaidDaysCost } from "./pricing";
 import { add, clamp, exact, map, scale, sub, type Range } from "./range";
 import type { UserState } from "./state";
 
 /**
- * How many days must be done at the maximum bounty rate to reach a tier,
- * doing only the easy ("relaxed") bounties on the remaining days.
+ * How many days must be done at the maximum free bounty rate to reach a
+ * tier, doing only the easy ("relaxed") bounties on the remaining days.
+ * When free bounties are not enough, it also tells on how many days the
+ * paid bounties would have to be unlocked on top of every free one.
  */
 export interface BountyPlan {
-  /** Days needed with every bounty, or `null` when bounties are not enough. */
+  /** Days needed with every free bounty, or `null` when they are not enough. */
   fullDays: number | null;
   /** Days that can stay at the relaxed rate. */
   relaxedDays: number;
-  /** Tokens still missing after doing every bounty every day (0 if feasible). */
+  /** Tokens still missing after doing every free bounty every day (0 if feasible). */
   shortfall: number;
+  /**
+   * Days with the paid bounties unlocked needed to close the shortfall
+   * (0 when there is none), or `null` when not even unlocking them every
+   * day is enough or the series has no paid bounties.
+   */
+  paidDays: number | null;
+  /** Tokens still missing after unlocking the paid bounties every day. */
+  paidShortfall: number;
+  /** Cheapest cost of those paid days, when known. */
+  paidCost: PaidDaysCost | null;
 }
 
 /** Minimum in-person events needed to reach a tier at a given bounty rate. */
@@ -27,6 +40,11 @@ export interface InPersonPlan {
    * even attending every remaining in-person event is not enough.
    */
   needed: { category: string; count: number }[] | null;
+  /**
+   * Cost of unlocking the paid bounties every remaining day, when the rate
+   * includes paid bounties and their prices are known.
+   */
+  cost: PaidDaysCost | null;
 }
 
 /** Days of daily bounties alone needed to reach a tier at a given rate. */
@@ -38,6 +56,11 @@ export interface BountyDays {
    * `null` when the season ends first.
    */
   days: number | null;
+  /**
+   * Cost of unlocking the paid bounties on those days, when the rate
+   * includes paid bounties and their prices are known.
+   */
+  cost: PaidDaysCost | null;
 }
 
 /** Outlook for one medal tier. */
@@ -53,11 +76,14 @@ export interface TierAnalysis {
   atPace: "yes" | "maybe" | "no" | null;
   /** Bounty effort needed with committed events, worst and best case. */
   bountyPlan: { pessimistic: BountyPlan; optimistic: BountyPlan };
-  /** In-person events needed at the relaxed and at the maximum bounty rate. */
+  /**
+   * In-person events needed at the relaxed, the maximum free and the maximum
+   * paid bounty rates.
+   */
   inPerson: InPersonPlan[];
   /**
-   * Days needed with daily bounties alone (no event tokens) at the relaxed
-   * and at the maximum bounty rate.
+   * Days needed with daily bounties alone (no event tokens) at the relaxed,
+   * the maximum free and the maximum paid bounty rates.
    */
   bountyDays: BountyDays[];
 }
@@ -69,7 +95,12 @@ export interface TierAnalysis {
 export type ForecastWarning =
   /** Declared event tokens exceed the current total. */
   | { code: "events-exceed-total" }
-  /** The total is higher than bounties and declared events can explain. */
+  /**
+   * The total is only possible if the paid daily bounties were unlocked on
+   * at least `days` days.
+   */
+  | { code: "paid-bounties"; days: number; cost: PaidDaysCost | null }
+  /** The total is higher than bounties (paid ones included) and declared events can explain. */
   | { code: "unexplained-tokens"; dailyMax: number };
 
 /** Full result of a forecast. */
@@ -85,8 +116,9 @@ export interface Forecast {
   todayInSeason: boolean;
   /** Tokens from the bounties done today. */
   todayTokens: number;
-  /** Tokens per day at the relaxed and maximum bounty rates. */
+  /** Tokens per day at the relaxed, maximum free and maximum paid bounty rates. */
   dailyRelaxed: number;
+  dailyFree: number;
   dailyMax: number;
   /** Event tokens already included in the current total. */
   eventsEarned: Range;
@@ -129,6 +161,7 @@ export interface Forecast {
 export function forecast(config: SeriesConfig, state: UserState, today: string): Forecast {
   const bounty = config.dailyBounties;
   const dailyMax = maxDailyTokens(bounty);
+  const dailyFree = freeDailyTokens(bounty);
   const dailyRelaxed = relaxedDailyTokens(bounty);
   const totalDays = daysBetween(config.startDate, config.endDate) + 1;
 
@@ -164,14 +197,40 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
     (e) => !e.awaitingTokens && e.state.intent === "maybe" && e.potential.max > 0,
   );
 
-  // Step 1: tokens attributable to past daily bounties.
+  /**
+   * Cheapest cost of unlocking the paid bounties on a number of consecutive
+   * days starting on `first`. A day whose paid bounties are already done
+   * (today) was already paid for, so it is not bought again.
+   */
+  const pricing = bounty.unlockPricing;
+  const paidExtra = dailyMax - dailyFree;
+  const todayPaid = todayInSeason && state.bountiesToday > bounty.freeCount;
+  const paidCost = (days: number, first: string): PaidDaysCost | null => {
+    if (!pricing || days <= 0) return null;
+    const toBuy = days - (todayPaid && first === today ? 1 : 0);
+    return toBuy > 0 ? paidDaysCost(pricing, toBuy, monthsSpanned(first, addDays(first, days - 1))) : null;
+  };
+  // First day after today that still belongs to the season.
+  const nextDay = season === "upcoming" ? config.startDate : addDays(today, 1);
+
+  // Step 1: tokens attributable to past daily bounties. Free bounties are
+  // the normal ceiling; above it the total is only possible with paid
+  // bounties, and above the paid ceiling something is missing.
   const warnings: ForecastWarning[] = [];
   const rawPast = sub(exact(current - todayTokens), eventsEarned);
+  const freeCap = elapsedDays * dailyFree;
   const pastCap = elapsedDays * dailyMax;
   if (rawPast.max < 0) {
     warnings.push({ code: "events-exceed-total" });
   } else if (rawPast.min > pastCap) {
     warnings.push({ code: "unexplained-tokens", dailyMax });
+  } else if (rawPast.min > freeCap && paidExtra > 0) {
+    const days = Math.ceil((rawPast.min - freeCap) / paidExtra);
+    // The paid days could be any of the elapsed ones, so the cost allows
+    // one subscription per month of the elapsed period.
+    const lastElapsed = addDays(config.startDate, elapsedDays - 1);
+    const cost = pricing ? paidDaysCost(pricing, days, monthsSpanned(config.startDate, lastElapsed)) : null;
+    warnings.push({ code: "paid-bounties", days, cost });
   }
   const pastBountyTokens = clamp(rawPast, 0, pastCap);
 
@@ -207,9 +266,14 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
         todayInSeason,
         todayTokens,
         dailyRelaxed,
-        dailyMax,
+        dailyMax: dailyFree,
+        dailyPaid: dailyMax,
+        // Regular days are used first, so paid days start tomorrow unless
+        // today is needed too.
+        costOfPaidDays: (days, withToday) => paidCost(days, withToday ? today : nextDay),
       });
-    const rates = [...new Set([bounty.relaxedCount, bounty.bountyTokens.length])];
+    const rates = [...new Set([bounty.relaxedCount, bounty.freeCount, bounty.bountyTokens.length])];
+    const isPaid = (count: number) => count > bounty.freeCount;
     return {
       tier,
       reached: current >= tier.tokens,
@@ -217,22 +281,29 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
       bountyPlan: { pessimistic: plan(committedRemaining.min), optimistic: plan(committedRemaining.max) },
       inPerson: rates.map((count) => {
         const rate = tokensForBounties(bounty, count);
+        // At a paid rate every remaining day is paid, today included while
+        // its bounties still add tokens.
+        const withToday = todayInSeason && rate > todayTokens;
         return {
           bountiesPerDay: count,
           needed: inPersonNeeded(tier.tokens, current + futureBounties(exact(rate)).min, evaluations),
+          cost: isPaid(count) ? paidCost(remainingDays + (withToday ? 1 : 0), withToday ? today : nextDay) : null,
         };
       }),
-      bountyDays: rates.map((count) => ({
-        bountiesPerDay: count,
-        days: daysToReach({
+      bountyDays: rates.map((count) => {
+        const rate = tokensForBounties(bounty, count);
+        const days = daysToReach({
           target: tier.tokens,
           current,
-          rate: tokensForBounties(bounty, count),
+          rate,
           remainingDays,
           todayInSeason,
           todayTokens,
-        }),
-      })),
+        });
+        // daysToReach starts counting today while it still adds tokens.
+        const first = todayInSeason && rate > todayTokens ? today : nextDay;
+        return { bountiesPerDay: count, days, cost: isPaid(count) && days ? paidCost(days, first) : null };
+      }),
     };
   });
 
@@ -244,6 +315,7 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
     todayInSeason,
     todayTokens,
     dailyRelaxed,
+    dailyFree,
     dailyMax,
     eventsEarned,
     pastBountyTokens,
@@ -287,12 +359,22 @@ interface BountyPlanInput {
   todayInSeason: boolean;
   todayTokens: number;
   dailyRelaxed: number;
+  /** Tokens per day doing every free bounty. */
   dailyMax: number;
+  /** Tokens per day doing the paid bounties too (defaults to `dailyMax`). */
+  dailyPaid?: number;
+  /**
+   * Cost of unlocking the paid bounties on a number of days, starting today
+   * or tomorrow. Omitted when prices are unknown.
+   */
+  costOfPaidDays?: (days: number, withToday: boolean) => PaidDaysCost | null;
 }
 
 /**
  * Minimum number of maximum-bounty days needed to reach a target, doing the
- * relaxed amount on every other day.
+ * relaxed amount on every other day. When even every free bounty every day
+ * falls short, it works out on how many of those days the paid bounties
+ * must be unlocked as well.
  *
  * Today counts as an available day only while its bounties are not all done;
  * its extra potential can be smaller than a regular day's (some bounties are
@@ -303,26 +385,48 @@ interface BountyPlanInput {
  */
 export function bountyPlan(input: BountyPlanInput): BountyPlan {
   const { target, base, remainingDays, todayInSeason, todayTokens, dailyRelaxed, dailyMax } = input;
+  const dailyPaid = input.dailyPaid ?? dailyMax;
   const todayOpen = todayInSeason && todayTokens < dailyMax;
   const daysLeft = remainingDays + (todayOpen ? 1 : 0);
+  const noPaid = { paidDays: 0, paidShortfall: 0, paidCost: null };
 
   const relaxedTotal =
     base + dailyRelaxed * remainingDays + (todayInSeason ? Math.max(0, dailyRelaxed - todayTokens) : 0);
   const deficit = target - relaxedTotal;
-  if (deficit <= 0) return { fullDays: 0, relaxedDays: daysLeft, shortfall: 0 };
+  if (deficit <= 0) return { fullDays: 0, relaxedDays: daysLeft, shortfall: 0, ...noPaid };
 
   const dayExtra = dailyMax - dailyRelaxed;
   const todayExtra = todayOpen ? dailyMax - Math.max(dailyRelaxed, todayTokens) : 0;
 
   if (dayExtra > 0) {
     const n = Math.ceil(deficit / dayExtra);
-    if (n <= remainingDays) return { fullDays: n, relaxedDays: daysLeft - n, shortfall: 0 };
+    if (n <= remainingDays) return { fullDays: n, relaxedDays: daysLeft - n, shortfall: 0, ...noPaid };
   }
   const leftover = deficit - dayExtra * remainingDays;
   if (todayOpen && todayExtra >= leftover) {
-    return { fullDays: remainingDays + 1, relaxedDays: 0, shortfall: 0 };
+    return { fullDays: remainingDays + 1, relaxedDays: 0, shortfall: 0, ...noPaid };
   }
-  return { fullDays: null, relaxedDays: 0, shortfall: leftover - todayExtra };
+  const shortfall = leftover - todayExtra;
+
+  // Free bounties every day are not enough: same greedy approach with the
+  // paid bounties on top of every free one, regular days first, then today.
+  const paidExtra = dailyPaid - dailyMax;
+  const todayPaidOpen = todayInSeason && todayTokens < dailyPaid;
+  const todayPaidExtra = todayPaidOpen ? dailyPaid - Math.max(dailyMax, todayTokens) : 0;
+  const short = { fullDays: null, relaxedDays: 0, shortfall };
+  const paid = (days: number, withToday: boolean): BountyPlan => ({
+    ...short,
+    paidDays: days,
+    paidShortfall: 0,
+    paidCost: input.costOfPaidDays?.(days, withToday) ?? null,
+  });
+  if (paidExtra > 0) {
+    const n = Math.ceil(shortfall / paidExtra);
+    if (n <= remainingDays) return paid(n, false);
+  }
+  const paidLeftover = shortfall - paidExtra * remainingDays;
+  if (todayPaidOpen && todayPaidExtra >= paidLeftover) return paid(remainingDays + 1, true);
+  return { ...short, paidDays: null, paidShortfall: paidLeftover - todayPaidExtra, paidCost: null };
 }
 
 /** Inputs of {@link daysToReach}. */

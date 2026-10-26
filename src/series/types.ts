@@ -37,11 +37,13 @@ export interface BountyMilestone {
 /**
  * Daily Research Bounty rewards.
  *
- * Usually 4 bounties of 10 tokens with a 10-token bonus after the 2nd and the
- * 4th (10 + 20 + 10 + 20 = 60 per day), but it is configurable per series.
+ * Usually 4 free bounties of 10 tokens with a 10-token bonus after the 2nd
+ * and the 4th (10 + 20 + 10 + 20 = 60 per day), plus 4 more of 10 tokens that
+ * must be unlocked with CMU (up to 100 per day), but it is configurable per
+ * series.
  */
 export interface DailyBountyConfig {
-  /** Tokens granted by each bounty, in completion order. */
+  /** Tokens granted by each bounty, in completion order, paid ones last. */
   bountyTokens: number[];
   /** Bonus milestones reached after completing a number of bounties. */
   milestones: BountyMilestone[];
@@ -50,6 +52,48 @@ export interface DailyBountyConfig {
    * home). It is the baseline rate used for "relaxed" days.
    */
   relaxedCount: number;
+  /**
+   * Number of bounties available every day for free. The following ones
+   * (up to `bountyTokens.length`) must be unlocked by paying.
+   */
+  freeCount: number;
+  /**
+   * Prices of the paid bounties. Kept in each series config so that a future
+   * price change never alters the figures of past series.
+   */
+  unlockPricing?: UnlockPricing;
+}
+
+/** A purchase that unlocks the paid daily bounties for some days. */
+export interface UnlockPack {
+  /** Days the paid bounties stay unlocked. */
+  days: number;
+  /** Price in CMU (the in-game currency). */
+  cmu: number;
+}
+
+/** A CMU package of the in-game store. */
+export interface CmuPack {
+  /** CMU obtained. */
+  cmu: number;
+  /** Price in euros. */
+  eur: number;
+}
+
+/**
+ * Prices involved in unlocking the paid daily bounties: the unlock packs (in
+ * CMU) and how CMU are bought with euros.
+ */
+export interface UnlockPricing {
+  /** Unlock packs offered in the game. */
+  packs: UnlockPack[];
+  /** CMU packages of the store. */
+  cmuStore: CmuPack[];
+  /**
+   * C.O.R.E. subscription: a monthly payment that includes some CMU. It is
+   * treated as a purchase that can only be made once per calendar month.
+   */
+  core: CmuPack;
 }
 
 /** Grouping of events, used for display and for the in-person planner. */

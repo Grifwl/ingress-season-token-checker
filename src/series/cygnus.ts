@@ -62,12 +62,32 @@ export const cygnus: SeriesConfig = {
     { name: { en: "Gold", es: "Oro" }, tokens: 24000 },
   ],
   dailyBounties: {
-    bountyTokens: [10, 10, 10, 10],
+    // 4 free bounties (10 / 30 / 40 / 60 tokens a day) plus 4 paid ones
+    // worth 10 tokens each (70 / 80 / 90 / 100).
+    bountyTokens: [10, 10, 10, 10, 10, 10, 10, 10],
     milestones: [
       { afterBounties: 2, tokens: 10 },
       { afterBounties: 4, tokens: 10 },
     ],
     relaxedCount: 3,
+    freeCount: 4,
+    // Prices as of October 2026, as seen in the game store.
+    unlockPricing: {
+      packs: [
+        { days: 1, cmu: 1500 },
+        { days: 3, cmu: 3500 },
+        { days: 7, cmu: 7000 },
+      ],
+      cmuStore: [
+        { cmu: 2500, eur: 2.09 },
+        { cmu: 7000, eur: 4.99 },
+        { cmu: 15000, eur: 9.99 },
+        { cmu: 32000, eur: 20.99 },
+        { cmu: 90000, eur: 49.99 },
+        { cmu: 200000, eur: 104.99 },
+      ],
+      core: { cmu: 10000, eur: 9.99 },
+    },
   },
   categories: [
     { id: "first-saturday", label: "First Saturday", pluralLabel: "First Saturdays" },

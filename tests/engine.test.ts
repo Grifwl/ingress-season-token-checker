@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { tokensForBounties } from "../src/engine/bounties";
 import { assignmentEarned, assignmentRemaining, eventMaxTokens } from "../src/engine/events";
 import { bountyPlan, daysToReach, forecast } from "../src/engine/forecast";
+import { cmuStoreCents, paidDaysCost, unlockCmu } from "../src/engine/pricing";
 import { normalizeState } from "../src/engine/state";
 import { allSeries } from "../src/series";
 import { cygnus } from "../src/series/cygnus";
@@ -38,8 +39,8 @@ describe("series configs", () => {
 
 describe("daily bounties", () => {
   it("applies milestone bonuses", () => {
-    const counts = [0, 1, 2, 3, 4].map((n) => tokensForBounties(cygnus.dailyBounties, n));
-    expect(counts).toEqual([0, 10, 30, 40, 60]);
+    const counts = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => tokensForBounties(cygnus.dailyBounties, n));
+    expect(counts).toEqual([0, 10, 30, 40, 60, 70, 80, 90, 100]);
   });
 });
 
@@ -74,12 +75,14 @@ describe("assignments", () => {
 
 describe("bountyPlan", () => {
   const base = { todayInSeason: false, todayTokens: 0, dailyRelaxed: 40, dailyMax: 60 };
+  const noPaid = { paidDays: 0, paidShortfall: 0, paidCost: null };
 
   it("needs no full days when relaxed is enough", () => {
     expect(bountyPlan({ ...base, target: 1000, base: 0, remainingDays: 25 })).toEqual({
       fullDays: 0,
       relaxedDays: 25,
       shortfall: 0,
+      ...noPaid,
     });
   });
 
@@ -89,6 +92,7 @@ describe("bountyPlan", () => {
       fullDays: 5,
       relaxedDays: 5,
       shortfall: 0,
+      ...noPaid,
     });
   });
 
@@ -97,7 +101,47 @@ describe("bountyPlan", () => {
       fullDays: null,
       relaxedDays: 0,
       shortfall: 100,
+      paidDays: null,
+      paidShortfall: 100,
+      paidCost: null,
     });
+  });
+
+  it("counts the paid days needed when free bounties fall short", () => {
+    // 100 short with free bounties -> 3 days of +40 with paid ones.
+    const plan = bountyPlan({ ...base, dailyPaid: 100, target: 700, base: 0, remainingDays: 10 });
+    expect(plan.paidDays).toBe(3);
+    // Even unlocking every day: 10 * 100 = 1,000 -> 500 short of 1,500.
+    const short = bountyPlan({ ...base, dailyPaid: 100, target: 1500, base: 0, remainingDays: 10 });
+    expect(short.paidDays).toBeNull();
+    expect(short.paidShortfall).toBe(500);
+  });
+});
+
+describe("pricing", () => {
+  const pricing = cygnus.dailyBounties.unlockPricing!;
+
+  it("picks the cheapest unlock packs", () => {
+    expect(unlockCmu(pricing.packs, 1)).toBe(1500);
+    expect(unlockCmu(pricing.packs, 2)).toBe(3000);
+    expect(unlockCmu(pricing.packs, 3)).toBe(3500);
+    // 7 + 7 + 7 + 3 + 1 days.
+    expect(unlockCmu(pricing.packs, 25)).toBe(26000);
+  });
+
+  it("picks the cheapest CMU packages", () => {
+    expect(cmuStoreCents(pricing.cmuStore, 1500)).toBe(209);
+    // 7,000 x 3 + 2,500 x 2.
+    expect(cmuStoreCents(pricing.cmuStore, 26000)).toBe(1915);
+  });
+
+  it("uses the CMU of one C.O.R.E. subscription per month at most", () => {
+    // 10,000 free CMU + 16,000 from the store (7,000 x 2 + 2,500).
+    expect(paidDaysCost(pricing, 25, 1)).toMatchObject({ cmu: 26000, eurCents: 1915, coreSubscriptions: 1, coreCents: 999, eurCentsWithCore: 1207 });
+    // Over three months, three subscriptions cover the 26,000 CMU.
+    expect(paidDaysCost(pricing, 25, 3)).toMatchObject({ coreSubscriptions: 3, coreCents: 2997, eurCentsWithCore: 0 });
+    // Never more subscriptions than needed.
+    expect(paidDaysCost(pricing, 1, 3)).toMatchObject({ cmu: 1500, coreSubscriptions: 1, eurCentsWithCore: 0 });
   });
 });
 
@@ -149,9 +193,32 @@ describe("forecast", () => {
     const gold = f.tiers.at(-1)!;
     // 3 bounties: 92 * 40 + 6,000 remote = 9,680 -> 14,320 missing -> 6 events.
     // 4 bounties: 92 * 60 + 6,000 remote = 11,520 -> 12,480 missing -> 5 events.
+    // 8 bounties: 92 * 100 + 6,000 remote = 15,200 -> 8,800 missing -> 4 events.
     const total = (p: (typeof gold.inPerson)[number]) => p.needed?.reduce((s, n) => s + n.count, 0);
-    expect(gold.inPerson.map(total)).toEqual([6, 5]);
+    expect(gold.inPerson.map(total)).toEqual([6, 5, 4]);
     expect(gold.bountyPlan.pessimistic.fullDays).toBeNull();
+  });
+
+  it("explains a total above the free maximum with paid bounties", () => {
+    // Up to 25 October: 25 * 60 = 1,500 from free bounties + 12,500 from
+    // events = 14,000. 1,000 more need 25 days of paid bounties (+40).
+    const state = normalizeState(cygnus, {
+      currentTokens: 15000,
+      events: {
+        "fs-oct": { completed: true },
+        "global-battles": { assignments: [3, 3, 3] },
+        "noise-floor": { assignments: [4, 4, 4, 4] },
+      },
+    });
+    const f = forecast(cygnus, state, "2026-10-26");
+    expect(f.warnings).toEqual([
+      { code: "paid-bounties", days: 25, cost: { days: 25, cmu: 26000, eurCents: 1915, coreSubscriptions: 1, coreCents: 999, eurCentsWithCore: 1207 } },
+    ]);
+    expect(f.pastBountyTokens).toEqual({ min: 2500, max: 2500 });
+
+    // Above 100 tokens a day nothing explains it.
+    state.currentTokens = 15100;
+    expect(forecast(cygnus, state, "2026-10-26").warnings[0]!.code).toBe("unexplained-tokens");
   });
 
   it("computes the daily average", () => {

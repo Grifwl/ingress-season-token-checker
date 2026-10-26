@@ -27,6 +27,12 @@ The page then:
    is enough. If it is not, it tells you on how many days you need to do every
    daily bounty, and which in-person events you would need to attend.
 
+Daily bounties can include paid ones, unlocked with CMU (the in-game
+currency). Forecasts show the relaxed, maximum free and maximum paid rates,
+and the cheapest cost in CMU and euros of any paid days, with and without a
+C.O.R.E. subscription. If your total is only possible with paid bounties,
+the page tells you on how many days you must have unlocked them.
+
 Some token sources are only partially documented (for example a campaign
 whose bounty breakdown is unpublished). The engine handles every uncertain
 figure as a `[min, max]` range, so results show the worst and best cases.
@@ -43,7 +49,10 @@ Everything specific to a season lives in one config file:
 
 1. Copy `src/series/cygnus.ts` to `src/series/<name>.ts` and update:
    - dates and medal thresholds (any number of tiers);
-   - daily bounty rewards (`dailyBounties`);
+   - daily bounty rewards (`dailyBounties`): how many are free
+     (`freeCount`) and the prices of the paid ones (`unlockPricing`: unlock
+     packs in CMU, CMU store packages and the C.O.R.E. subscription). Prices
+     live in each series config so later changes never alter past series;
    - the events and their token rewards. There are three kinds:
      - `fixed`: all-or-nothing, e.g. a First Saturday check-in. Set
        `tokensGrantedLater` when the tokens arrive some time after the

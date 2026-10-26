@@ -27,6 +27,13 @@ La página:
    Si no basta, te dice cuántos días tienes que hacer todos los bounties
    diarios y a qué eventos presenciales tendrías que asistir.
 
+Los bounties diarios pueden incluir algunos de pago, que se desbloquean con
+CMU (la moneda del juego). Las previsiones muestran el ritmo relajado, el
+máximo gratuito y el máximo de pago, y el coste más barato en CMU y en euros
+de los días de pago, con y sin suscripción C.O.R.E. Si tu total solo es
+posible con bounties de pago, la página te dice cuántos días tienes que
+haberlos desbloqueado.
+
 Algunas fuentes de tokens solo están documentadas en parte (por ejemplo, una
 campaña de la que no se ha publicado el detalle de cada bounty). El motor
 trata cada cifra incierta como un rango `[mín, máx]`, así que los resultados
@@ -45,7 +52,11 @@ configuración:
 
 1. Copia `src/series/cygnus.ts` a `src/series/<nombre>.ts` y actualiza:
    - las fechas y los umbrales de medalla (cualquier número de niveles);
-   - las recompensas de los bounties diarios (`dailyBounties`);
+   - las recompensas de los bounties diarios (`dailyBounties`): cuántos son
+     gratuitos (`freeCount`) y los precios de los de pago (`unlockPricing`:
+     paquetes de desbloqueo en CMU, paquetes de CMU de la tienda y la
+     suscripción C.O.R.E.). Los precios van en la configuración de cada serie
+     para que un cambio futuro no altere las series pasadas;
    - los eventos y sus tokens. Hay tres tipos:
      - `fixed`: todo o nada, por ejemplo el check-in de un First Saturday.
        Indica `tokensGrantedLater` cuando los tokens llegan un tiempo

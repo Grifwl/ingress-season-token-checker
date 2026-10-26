@@ -118,14 +118,22 @@ const en = {
   currentTokens: (tokenName: string) => `Current ${tokenName}`,
   bountiesToday: "Daily bounties done today",
   bountiesOption: (n: number, tokens: string) => `${n} (${tokens} tokens)`,
+  bountiesOptionPaid: (n: number, tokens: string) => `${n} (${tokens} tokens, paid)`,
 
   tokenSources: "Token sources",
   dailyBounties: "Daily Research Bounties",
   dailyBountiesInfo: (relaxed: number) =>
     `Every day of the season. The first ${relaxed} are usually doable from home; ` +
     "the forecast calls that a <em>relaxed</em> day.",
+  paidBountiesInfo: (from: number, to: number, packs: string) =>
+    `Bounties ${from}–${to} have to be unlocked with CMU: ${packs}.`,
+  unlockPack: (days: number, cmu: string) => `${days} ${pl(days, "day", "days")} for ${cmu} CMU`,
   bountiesColumn: "Bounties",
   tokensPerDayColumn: "Tokens / day",
+  paidMark: "paid",
+  cost: (cmu: string, eur: string, eurCore: string, subs: number, subsEur: string) =>
+    `≈ ${cmu} CMU: ${eur}, or ${eurCore} with C.O.R.E. ` +
+    `(using the CMU of ${subs} ${pl(subs, "subscription", "subscriptions")}, ${subsEur})`,
 
   phaseUpcoming: "Upcoming",
   phaseActive: "In progress",
@@ -167,8 +175,15 @@ const en = {
     "The event tokens you declared add up to more than your current total. " +
     "Check your current tokens and your event progress.",
   warnUnexplained: (dailyMax: string) =>
-    `Your total is higher than daily bounties (max ${dailyMax}/day) and your declared events can explain. ` +
-    "You may have forgotten to declare an event.",
+    `Your total is higher than daily bounties (max ${dailyMax}/day, paid ones included) and your declared ` +
+    "events can explain. You may have forgotten to declare an event.",
+  warnPaidBounties: (days: number) =>
+    `Your total is only possible if you unlocked the paid daily bounties on at least ${days} ` +
+    `${pl(days, "day", "days")} (or if you forgot to declare an event).`,
+  costNote:
+    "Costs are the cheapest combination of purchases within the dates involved, ignoring CMU you already had. " +
+    "With C.O.R.E., the CMU included in the monthly subscription (one per month) are free, since you pay " +
+    "it anyway; only the extra CMU are counted, and the subscriptions used are shown apart.",
   daysElapsed: "Days elapsed",
   daysOf: (e: number, t: number) => `${e} of ${t}`,
   daysLeftAfterToday: (n: number) => `${n} ${pl(n, "day", "days")} left after today`,
@@ -203,10 +218,14 @@ const en = {
     `${relaxed} are enough on the other ${otherDays} ${pl(otherDays, "day", "days")}`,
   planShort: (all: number, shortfall: string) =>
     `even with ${all} bounties every day you are ${shortfall} tokens short`,
+  planPaidDays: (days: number) =>
+    `; unlocking the paid bounties on <strong>${days} ${pl(days, "day", "days")}</strong> closes the gap`,
+  planPaidShort: (shortfall: string) =>
+    `; not even unlocking the paid bounties every day is enough (${shortfall} tokens short)`,
   bestCase: (text: string) => ` (best case: ${text})`,
   withCommitted: (text: string) => `With the events you committed to, ${text}.`,
-  inPersonPrefix: (n: number) =>
-    `With ${n} bounties a day and every remote event you have not ruled out completed,`,
+  inPersonPrefix: (n: number, cost: string) =>
+    `With ${n} bounties a day${cost} and every remote event you have not ruled out completed,`,
   inPersonImpossible: "not reachable even attending every remaining in-person event.",
   inPersonNone: "no in-person event is needed.",
   inPersonNeeded: (list: string) => `attend at least ${list}.`,
@@ -233,14 +252,21 @@ const es: Messages = {
   currentTokens: (tokenName) => `${tokenName} actuales`,
   bountiesToday: "Bounties diarios hechos hoy",
   bountiesOption: (n, tokens) => `${n} (${tokens} tokens)`,
+  bountiesOptionPaid: (n, tokens) => `${n} (${tokens} tokens, de pago)`,
 
   tokenSources: "Fuentes de tokens",
   dailyBounties: "Bounties diarios de investigación",
   dailyBountiesInfo: (relaxed) =>
     `Todos los días de la temporada. Los ${relaxed} primeros se suelen poder hacer desde casa; ` +
     "la previsión lo llama un día <em>relajado</em>.",
+  paidBountiesInfo: (from, to, packs) => `Los bounties ${from}–${to} se desbloquean con CMU: ${packs}.`,
+  unlockPack: (days, cmu) => `${days} ${pl(days, "día", "días")} por ${cmu} CMU`,
   bountiesColumn: "Bounties",
   tokensPerDayColumn: "Tokens / día",
+  paidMark: "de pago",
+  cost: (cmu, eur, eurCore, subs, subsEur) =>
+    `≈ ${cmu} CMU: ${eur}, o ${eurCore} con C.O.R.E. ` +
+    `(usando los CMU de ${subs} ${pl(subs, "suscripción", "suscripciones")}, ${subsEur})`,
 
   phaseUpcoming: "Próximamente",
   phaseActive: "En curso",
@@ -282,8 +308,15 @@ const es: Messages = {
     "Los tokens de eventos que has indicado suman más que tu total actual. " +
     "Revisa tus tokens actuales y tu progreso en los eventos.",
   warnUnexplained: (dailyMax) =>
-    `Tu total es mayor de lo que explican los bounties diarios (máx. ${dailyMax}/día) y los eventos indicados. ` +
-    "Puede que te hayas olvidado de indicar algún evento.",
+    `Tu total es mayor de lo que explican los bounties diarios (máx. ${dailyMax}/día, contando los de pago) ` +
+    "y los eventos indicados. Puede que te hayas olvidado de indicar algún evento.",
+  warnPaidBounties: (days) =>
+    `Tu total solo es posible si has desbloqueado los bounties diarios de pago como mínimo ${days} ` +
+    `${pl(days, "día", "días")} (o si te has olvidado de indicar algún evento).`,
+  costNote:
+    "Los costes son la combinación de compras más barata dentro de las fechas implicadas, sin contar los CMU " +
+    "que ya tuvieras. Con C.O.R.E., los CMU incluidos en la suscripción mensual (una al mes) son gratis, " +
+    "ya que la pagas igualmente; solo se cuentan los CMU adicionales, y las suscripciones usadas se indican aparte.",
   daysElapsed: "Días transcurridos",
   daysOf: (e, t) => `${e} de ${t}`,
   daysLeftAfterToday: (n) => `${pl(n, "queda", "quedan")} ${n} ${pl(n, "día", "días")} después de hoy`,
@@ -315,10 +348,14 @@ const es: Messages = {
     `haz los ${all} bounties <strong>${days} ${pl(days, "día", "días")}</strong>; ` +
     `${pl(otherDays, "el otro día", `los otros ${otherDays} días`)} basta con ${relaxed}`,
   planShort: (all, shortfall) => `incluso con ${all} bounties cada día te faltan ${shortfall} tokens`,
+  planPaidDays: (days) =>
+    `; desbloqueando los bounties de pago <strong>${days} ${pl(days, "día", "días")}</strong> llegas`,
+  planPaidShort: (shortfall) =>
+    `; ni desbloqueando los bounties de pago cada día llegas (te faltan ${shortfall} tokens)`,
   bestCase: (text) => ` (en el mejor caso: ${text})`,
   withCommitted: (text) => `Con los eventos a los que te has comprometido, ${text}.`,
-  inPersonPrefix: (n) =>
-    `Con ${n} bounties al día y completando todos los eventos en remoto que no hayas descartado,`,
+  inPersonPrefix: (n, cost) =>
+    `Con ${n} bounties al día${cost} y completando todos los eventos en remoto que no hayas descartado,`,
   inPersonImpossible: "no llegas ni asistiendo a todos los eventos presenciales que quedan.",
   inPersonNone: "no necesitas ningún evento presencial.",
   inPersonNeeded: (list) => `tienes que asistir como mínimo a ${list}.`,

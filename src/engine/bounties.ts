@@ -22,13 +22,23 @@ export function tokensForBounties(cfg: DailyBountyConfig, count: number): number
 }
 
 /**
- * Maximum tokens obtainable per day from daily bounties.
+ * Maximum tokens obtainable per day from daily bounties, paid ones included.
  *
  * @param cfg - Daily bounty rewards of the series.
  * @returns Tokens for completing every bounty.
  */
 export function maxDailyTokens(cfg: DailyBountyConfig): number {
   return tokensForBounties(cfg, cfg.bountyTokens.length);
+}
+
+/**
+ * Maximum tokens obtainable per day from the free daily bounties.
+ *
+ * @param cfg - Daily bounty rewards of the series.
+ * @returns Tokens for completing `freeCount` bounties.
+ */
+export function freeDailyTokens(cfg: DailyBountyConfig): number {
+  return tokensForBounties(cfg, cfg.freeCount);
 }
 
 /**
