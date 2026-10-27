@@ -44,6 +44,7 @@ function oneDayEvents(
  * - https://ingress.com/news/2026-cygnus-shardstorm
  * - https://ingress.com/news/2026-cygnus-globalbattles
  * - https://ingress.com/news/2026-thekeeperswerefirst (Noise Floor details)
+ * - https://ingress.com/news/2026-leonids (Leonids: Through the Ages)
  *
  * Global Battles: the post gives the per-assignment totals (1,000 / 2,500 /
  * 4,500). The bounty breakdowns of the three assignments were read in
@@ -221,12 +222,40 @@ export const cygnus: SeriesConfig = {
       startDate: "2026-11-05",
       endDate: "2026-11-30",
       inPerson: false,
-      kind: "open",
-      maxTokens: 2000,
+      infoUrl: "https://ingress.com/news/2026-leonids",
       notes: {
-        en: "Assignment details will be published closer to the start date.",
-        es: "El detalle de las asignaciones se publicará cerca de la fecha de inicio.",
+        en:
+          "Free campaign. Only Stages 1 and 2 grant tokens; Stage 3 (6 missions, 80 upgrades, " +
+          "25 drone hacks, 300 destroyed resonators) only grants items. The paid Leonids campaigns " +
+          "grant no tokens.",
+        es:
+          "Campaña gratuita. Solo las etapas 1 y 2 dan tokens; la etapa 3 (6 misiones, 80 mejoras, " +
+          "25 hackeos con dron, 300 resonadores destruidos) solo da objetos. Las campañas de pago " +
+          "de Leonids no dan tokens.",
       },
+      kind: "campaign",
+      // Each stage has one assignment of 4 bounties (150 tokens each) that
+      // is completed with any 3 of them, granting 400 more tokens.
+      assignments: [
+        {
+          name: {
+            en: "Stage 1 (3 unique captures, 70 deploys, 3 drone hacks, 50 destroys)",
+            es: "Etapa 1 (3 capturas únicas, 70 despliegues, 3 hackeos con dron, 50 destrucciones)",
+          },
+          bounties: [150, 150, 150, 150],
+          reward: 400,
+          required: 3,
+        },
+        {
+          name: {
+            en: "Stage 2 (3 unique visits, 20 mods, 8 daily bounties, 15 destroyed mods)",
+            es: "Etapa 2 (3 visitas únicas, 20 mods, 8 bounties diarios, 15 mods destruidos)",
+          },
+          bounties: [150, 150, 150, 150],
+          reward: 400,
+          required: 3,
+        },
+      ],
     },
     {
       id: "crystal-horizon",
