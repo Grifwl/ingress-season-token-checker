@@ -224,33 +224,21 @@ export const cygnus: SeriesConfig = {
       inPerson: false,
       infoUrl: "https://ingress.com/news/2026-leonids",
       notes: {
-        en:
-          "Free campaign. Only Stages 1 and 2 grant tokens; Stage 3 (6 missions, 80 upgrades, " +
-          "25 drone hacks, 300 destroyed resonators) only grants items. The paid Leonids campaigns " +
-          "grant no tokens.",
-        es:
-          "Campaña gratuita. Solo las etapas 1 y 2 dan tokens; la etapa 3 (6 misiones, 80 mejoras, " +
-          "25 hackeos con dron, 300 resonadores destruidos) solo da objetos. Las campañas de pago " +
-          "de Leonids no dan tokens.",
+        en: "Only Stages 1 and 2 grant tokens; Stage 3 only grants items.",
+        es: "Solo las etapas 1 y 2 dan tokens; la etapa 3 solo da objetos.",
       },
       kind: "campaign",
       // Each stage has one assignment of 4 bounties (150 tokens each) that
       // is completed with any 3 of them, granting 400 more tokens.
       assignments: [
         {
-          name: {
-            en: "Stage 1 (3 unique captures, 70 deploys, 3 drone hacks, 50 destroys)",
-            es: "Etapa 1 (3 capturas únicas, 70 despliegues, 3 hackeos con dron, 50 destrucciones)",
-          },
+          name: { en: "Stage 1", es: "Etapa 1" },
           bounties: [150, 150, 150, 150],
           reward: 400,
           required: 3,
         },
         {
-          name: {
-            en: "Stage 2 (3 unique visits, 20 mods, 8 daily bounties, 15 destroyed mods)",
-            es: "Etapa 2 (3 visitas únicas, 20 mods, 8 bounties diarios, 15 mods destruidos)",
-          },
+          name: { en: "Stage 2", es: "Etapa 2" },
           bounties: [150, 150, 150, 150],
           reward: 400,
           required: 3,
