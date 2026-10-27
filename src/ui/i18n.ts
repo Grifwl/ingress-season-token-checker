@@ -149,6 +149,8 @@ const en = {
   gotTokens: "I got these tokens",
   attendedPending: "I attended; tokens not received yet",
   bountiesDone: (k: number, n: number) => `${k} of ${n} bounties`,
+  bountiesDoneClosed: (k: number, n: number) => `${k} of ${n} bounties · assignment closed`,
+  closedAssignment: "Closed: the missing bounties can no longer be done.",
   detailedAssignment: (bounties: string, reward: string, required: number, n: number) =>
     `${bounties} + ${reward} on completing ${required} of ${n}`,
   opaqueAssignment: (total: string) => `${total} in total`,
@@ -283,6 +285,8 @@ const es: Messages = {
   gotTokens: "Ya tengo estos tokens",
   attendedPending: "Asistí; aún no he recibido los tokens",
   bountiesDone: (k, n) => `${k} de ${n} bounties`,
+  bountiesDoneClosed: (k, n) => `${k} de ${n} bounties · asignación cerrada`,
+  closedAssignment: "Cerrada: los bounties que faltaban ya no se pueden hacer.",
   detailedAssignment: (bounties, reward, required, n) =>
     `${bounties} + ${reward} al completar ${required} de ${n}`,
   opaqueAssignment: (total) => `${total} en total`,

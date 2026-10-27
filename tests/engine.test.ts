@@ -61,6 +61,39 @@ describe("assignments", () => {
     expect(assignmentRemaining(a1!, 3, "minimum")).toEqual({ min: 0, max: 0 });
   });
 
+  it("forfeits the missing bounties of a closed assignment", () => {
+    // Leonids: stage 1 closed at 3 of 4 by starting stage 2, which is at
+    // 4 of 4. The 4th bounty of stage 1 (150) is lost.
+    const state = normalizeState(cygnus, {
+      events: { leonids: { intent: "yes", assignments: [3, 4] } },
+    });
+    expect(state.events.leonids!.closedAssignments).toEqual([true, false]);
+    const ev = forecast(cygnus, state, "2026-11-10").evaluations.find((e) => e.event.id === "leonids")!;
+    expect(ev.earned).toEqual({ min: 1850, max: 1850 });
+    expect(ev.potential).toEqual({ min: 0, max: 0 });
+    expect(ev.forfeited).toEqual({ min: 150, max: 150 });
+  });
+
+  it("keeps the last assignment open unless marked closed", () => {
+    const open = normalizeState(cygnus, { events: { leonids: { assignments: [4, 3] } } });
+    const closed = normalizeState(cygnus, {
+      events: { leonids: { assignments: [4, 3], closedAssignments: [false, true] } },
+    });
+    const evOf = (s: typeof open) =>
+      forecast(cygnus, s, "2026-11-10").evaluations.find((e) => e.event.id === "leonids")!;
+    expect(evOf(open).potential).toEqual({ min: 150, max: 150 });
+    expect(evOf(closed).potential).toEqual({ min: 0, max: 0 });
+    expect(evOf(closed).forfeited).toEqual({ min: 150, max: 150 });
+  });
+
+  it("ignores closed flags that cannot apply", () => {
+    // Stage 1 at 4 of 4 has nothing left to lose; stage 2 not completed.
+    const state = normalizeState(cygnus, {
+      events: { leonids: { assignments: [4, 2], closedAssignments: [true, true] } },
+    });
+    expect(state.events.leonids!.closedAssignments).toEqual([false, false]);
+  });
+
   it("reports the tokens a minimum plan leaves behind", () => {
     // Noise Floor with assignments 1-2 at 4/4: the minimum plan skips one
     // bounty in assignments 3 (90) and 4 (120).

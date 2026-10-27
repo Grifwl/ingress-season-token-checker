@@ -342,6 +342,7 @@ function fallbackState() {
     attended: false,
     assignments: [],
     assignmentKinds: [],
+    closedAssignments: [],
     plan: "full" as const,
     earnedMin: 0,
     earnedMax: 0,

@@ -3,6 +3,7 @@ import {
   assignmentKind,
   convertAssignmentProgress,
   enforceAssignmentOrder,
+  enforceClosedAssignments,
   type AssignmentKind,
 } from "./events";
 
@@ -38,6 +39,12 @@ export interface EventState {
    * per-bounty details later.
    */
   assignmentKinds: AssignmentKind[];
+  /**
+   * Campaign events, one entry per assignment: whether it is closed (its
+   * reward was claimed), so its missing bounties can no longer be done.
+   * Kept consistent by {@link enforceClosedAssignments}.
+   */
+  closedAssignments: boolean[];
   /** Campaign events: how the remaining assignments will be done. */
   plan: CampaignPlan;
   /** Open events: lower estimate of tokens earned so far. */
@@ -75,6 +82,7 @@ export function defaultEventState(event: EventConfig): EventState {
     attended: false,
     assignments: event.kind === "campaign" ? event.assignments.map(() => 0) : [],
     assignmentKinds: event.kind === "campaign" ? event.assignments.map(assignmentKind) : [],
+    closedAssignments: event.kind === "campaign" ? event.assignments.map(() => false) : [],
     plan: "full",
     earnedMin: 0,
     earnedMax: 0,
@@ -107,24 +115,34 @@ export function normalizeState(config: SeriesConfig, raw: unknown): UserState {
     const saved = rawEvents[event.id] ?? {};
     const savedAssignments = Array.isArray(saved.assignments) ? saved.assignments : [];
     const savedKinds = Array.isArray(saved.assignmentKinds) ? saved.assignmentKinds : [];
+    const savedClosed = Array.isArray(saved.closedAssignments) ? saved.closedAssignments : [];
+    const assignments =
+      event.kind === "campaign"
+        ? enforceAssignmentOrder(
+            event.assignments,
+            event.assignments.map((a, i) => {
+              // Answers saved before kinds were recorded match the config
+              // they were saved with, assumed to be the current one.
+              const k = savedKinds[i];
+              const kind: AssignmentKind = k === "detailed" || k === "opaque" ? k : assignmentKind(a);
+              return convertAssignmentProgress(a, num(savedAssignments[i]), kind);
+            }),
+          )
+        : [];
     events[event.id] = {
       intent: saved.intent === "yes" || saved.intent === "maybe" || saved.intent === "no" ? saved.intent : def.intent,
       completed: typeof saved.completed === "boolean" ? saved.completed : def.completed,
       attended: typeof saved.attended === "boolean" ? saved.attended : def.attended,
-      assignments:
+      assignments,
+      assignmentKinds: def.assignmentKinds,
+      closedAssignments:
         event.kind === "campaign"
-          ? enforceAssignmentOrder(
+          ? enforceClosedAssignments(
               event.assignments,
-              event.assignments.map((a, i) => {
-                // Answers saved before kinds were recorded match the config
-                // they were saved with, assumed to be the current one.
-                const k = savedKinds[i];
-                const kind: AssignmentKind = k === "detailed" || k === "opaque" ? k : assignmentKind(a);
-                return convertAssignmentProgress(a, num(savedAssignments[i]), kind);
-              }),
+              assignments,
+              savedClosed.map((c) => c === true),
             )
           : [],
-      assignmentKinds: def.assignmentKinds,
       plan: saved.plan === "minimum" ? "minimum" : "full",
       earnedMin: num(saved.earnedMin),
       earnedMax: num(saved.earnedMax),

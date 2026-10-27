@@ -2,7 +2,9 @@ import { tokensForBounties } from "../engine/bounties";
 import { todayIso, isIsoDate } from "../engine/dates";
 import {
   canAwaitTokens,
+  canCloseEarly,
   enforceAssignmentOrder,
+  enforceClosedAssignments,
   evaluateEvent,
   eventMaxTokens,
   firstLockedAssignment,
@@ -220,7 +222,12 @@ export class SeriesPage {
       if (ev.phase !== "upcoming") {
         const locked = firstLockedAssignment(event.assignments, st.assignments);
         rows.push(
-          ...event.assignments.map((a, i) => this.renderAssignment(id, a, i, st.assignments[i] ?? 0, i >= locked)),
+          ...event.assignments.map((a, i) =>
+            this.renderAssignment(id, a, i, st.assignments[i] ?? 0, i >= locked, {
+              closed: st.closedAssignments[i] === true,
+              nextStarted: (st.assignments[i + 1] ?? 0) > 0,
+            }),
+          ),
         );
       }
       // Only meaningful when skipping a bounty is possible (e.g. 3 of 4).
@@ -298,16 +305,36 @@ export class SeriesPage {
    * @param index - Position in the campaign.
    * @param progress - Stored progress value.
    * @param locked - Whether the previous assignment is not completed yet.
+   * @param closing - Whether the assignment is closed, and whether the next
+   *   one is started (which forces it closed).
    */
-  private renderAssignment(eventId: string, a: Assignment, index: number, progress: number, locked: boolean): string {
+  private renderAssignment(
+    eventId: string,
+    a: Assignment,
+    index: number,
+    progress: number,
+    locked: boolean,
+    closing: { closed: boolean; nextStarted: boolean },
+  ): string {
     const t = m();
     let detail: string;
     let options: string;
     if (isDetailed(a)) {
       detail = t.detailedAssignment(a.bounties.map(fmt).join(" + "), fmt(a.reward), a.required, a.bounties.length);
-      options = Array.from({ length: a.bounties.length + 1 }, (_, n) =>
-        option(String(n), t.bountiesDone(n, a.bounties.length), progress === n),
-      ).join("");
+      // A completed assignment with bounties still undone gets a second
+      // option to say it was closed (its reward claimed), which forfeits
+      // the missing bounties. Once the next assignment is started it must
+      // have been closed, so the open option is no longer offered.
+      options = Array.from({ length: a.bounties.length + 1 }, (_, n) => {
+        const value = String(n);
+        const done = t.bountiesDone(n, a.bounties.length);
+        if (!canCloseEarly(a, n)) return option(value, done, progress === n);
+        const isCurrent = progress === n;
+        return [
+          closing.nextStarted ? "" : option(value, done, isCurrent && !closing.closed),
+          option(`${value}c`, t.bountiesDoneClosed(n, a.bounties.length), isCurrent && closing.closed),
+        ].join("");
+      }).join("");
     } else {
       detail = t.opaqueAssignment(fmt(a.total));
       options = [
@@ -323,7 +350,8 @@ export class SeriesPage {
       `<span class="row-title">${esc(tx(a.name))}</span>
        <small class="muted">${esc(detail)}</small>
        ${note ? `<small class="note">${esc(note)}</small>` : ""}
-       ${locked ? `<small class="muted">${esc(t.lockedAssignment)}</small>` : ""}`,
+       ${locked ? `<small class="muted">${esc(t.lockedAssignment)}</small>` : ""}
+       ${closing.closed ? `<small class="muted">${esc(t.closedAssignment)}</small>` : ""}`,
       `<select data-event="${eventId}" data-prop="assignment" data-index="${index}"${locked ? " disabled" : ""}>${options}</select>`,
     );
   }
@@ -379,13 +407,19 @@ export class SeriesPage {
           st.plan = value === "minimum" ? "minimum" : "full";
           break;
         case "assignment": {
-          st.assignments[Number(target.dataset.index)] = num(value);
+          // Values ending in "c" mean the assignment was closed with that
+          // many bounties done.
+          const index = Number(target.dataset.index);
+          st.assignments[index] = num(String(value).replace(/c$/, ""));
+          st.closedAssignments[index] = String(value).endsWith("c");
           // Assignments unlock in order: lowering one below its completion
-          // threshold clears the later ones, and the card is redrawn so the
-          // right selects are enabled.
+          // threshold clears the later ones, and starting one closes the
+          // previous. The card is redrawn so the right selects and options
+          // are shown.
           const event = this.config.events.find((e) => e.id === eventId);
           if (event?.kind === "campaign") {
             st.assignments = enforceAssignmentOrder(event.assignments, st.assignments);
+            st.closedAssignments = enforceClosedAssignments(event.assignments, st.assignments, st.closedAssignments);
             if (committed) this.rerenderEvent(event);
           }
           break;

@@ -33,8 +33,9 @@ export interface EventEvaluation {
   awaitingTokens: boolean;
   /**
    * Tokens the agent will not get: what was left unearned in a finished
-   * event, the whole remainder of an event marked "no", or the bounties a
-   * "minimum" campaign plan skips.
+   * event, the whole remainder of an event marked "no", the bounties left
+   * undone in closed assignments, or the bounties a "minimum" campaign plan
+   * skips.
    */
   forfeited: Range;
   /**
@@ -152,6 +153,39 @@ export function enforceAssignmentOrder(assignments: Assignment[], progress: numb
   return assignments.map((_, i) => (i < locked ? progress[i] ?? 0 : 0));
 }
 
+/**
+ * Whether an assignment can be closed with bounties still undone: it is
+ * completed (the required bounties are done) but not every bounty is.
+ *
+ * @param a - Assignment config.
+ * @param progress - Bounties done (detailed) or opaque status code.
+ * @returns `true` when closing it would leave bounties behind.
+ */
+export function canCloseEarly(a: Assignment, progress: number): boolean {
+  return isDetailed(a) && progress >= a.required && progress < a.bounties.length;
+}
+
+/**
+ * Work out which assignments are closed. Claiming an assignment's reward
+ * closes it for good: its missing bounties can no longer be done. Starting
+ * the next assignment requires claiming the previous one, so any assignment
+ * followed by a started one is closed; otherwise only the agent can tell
+ * (e.g. for the last assignment), so the stored flag is kept. Assignments
+ * that cannot leave bounties behind are never flagged, since it would not
+ * change anything.
+ *
+ * @param assignments - Assignment configs.
+ * @param progress - Progress per assignment, already in unlock order.
+ * @param closed - Stored flags (may be shorter or missing entries).
+ * @returns A consistent closed flag per assignment.
+ */
+export function enforceClosedAssignments(assignments: Assignment[], progress: number[], closed: boolean[]): boolean[] {
+  return assignments.map((a, i) => {
+    if (!canCloseEarly(a, progress[i] ?? 0)) return false;
+    return (progress[i + 1] ?? 0) > 0 || closed[i] === true;
+  });
+}
+
 /** How an assignment's progress is recorded: bounty count or status code. */
 export type AssignmentKind = "detailed" | "opaque";
 
@@ -213,9 +247,11 @@ export function assignmentEarned(a: Assignment, progress: number): Range {
  * @param a - Assignment config.
  * @param progress - Bounties done (detailed) or opaque status code.
  * @param plan - "full" = every bounty, "minimum" = just enough to complete it.
+ * @param closed - Whether the assignment is closed (see {@link enforceClosedAssignments}).
  * @returns Interval of remaining tokens.
  */
-export function assignmentRemaining(a: Assignment, progress: number, plan: CampaignPlan): Range {
+export function assignmentRemaining(a: Assignment, progress: number, plan: CampaignPlan, closed = false): Range {
+  if (closed) return exact(0);
   const earned = assignmentEarned(a, progress);
   if (!isDetailed(a)) {
     // Without a breakdown both plans are the same: finish the assignment.
@@ -231,18 +267,22 @@ export function assignmentRemaining(a: Assignment, progress: number, plan: Campa
 }
 
 /**
- * Tokens of one assignment that a plan deliberately leaves behind: with the
- * "minimum" plan, the bounties beyond the required ones are never done.
+ * Tokens of one assignment that will not be earned even if the agent
+ * finishes the campaign: the bounties left undone in a closed assignment,
+ * or, with the "minimum" plan, the bounties beyond the required ones.
  *
  * @param a - Assignment config.
  * @param progress - Bounties done (detailed) or opaque status code.
  * @param plan - Plan for the rest of the assignment.
+ * @param closed - Whether the assignment is closed (see {@link enforceClosedAssignments}).
  * @returns Interval of tokens that will not be earned.
  */
-export function assignmentForfeited(a: Assignment, progress: number, plan: CampaignPlan): Range {
+export function assignmentForfeited(a: Assignment, progress: number, plan: CampaignPlan, closed = false): Range {
   // Opaque assignments cannot be partially skipped as far as we know.
-  if (plan === "full" || !isDetailed(a)) return exact(0);
+  if (!isDetailed(a)) return exact(0);
   const done = Math.min(progress, a.bounties.length);
+  if (closed) return bountySum(a.bounties, a.bounties.length - done);
+  if (plan === "full") return exact(0);
   // Once the assignment is complete the agent stops; before that, only the
   // required bounties will be done.
   const skipped = a.bounties.length - Math.max(done, a.required);
@@ -280,11 +320,12 @@ export function evaluateEvent(event: EventConfig, state: EventState, today: stri
         // Upcoming campaigns are evaluated with zero progress regardless of
         // what may be stored, so stale answers cannot inflate the forecast.
         const progressOf = (i: number) => (phase === "upcoming" ? 0 : state.assignments[i] ?? 0);
+        const closedOf = (i: number) => phase !== "upcoming" && state.closedAssignments[i] === true;
         potential = add(
-          ...event.assignments.map((a, i) => assignmentRemaining(a, progressOf(i), state.plan)),
+          ...event.assignments.map((a, i) => assignmentRemaining(a, progressOf(i), state.plan, closedOf(i))),
         );
         planLoss = add(
-          ...event.assignments.map((a, i) => assignmentForfeited(a, progressOf(i), state.plan)),
+          ...event.assignments.map((a, i) => assignmentForfeited(a, progressOf(i), state.plan, closedOf(i))),
         );
       }
       break;
