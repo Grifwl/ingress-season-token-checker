@@ -172,6 +172,7 @@ table.mini caption { text-align: left; font-weight: 600; padding-bottom: 2px; }
 .stats dd.muted { font-size: 0.8rem; font-weight: normal; }
 
 .tier { border-left: 4px solid var(--no); padding: 4px 12px; margin: 12px 0; }
+.tier h3 { margin-top: 0; }
 .tier p { margin: 4px 0; }
 .tier-ok { border-color: var(--ok); }
 .tier-maybe { border-color: var(--maybe); }
