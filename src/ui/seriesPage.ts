@@ -23,10 +23,21 @@ import {
 import type { PaidDaysCost } from "../engine/pricing";
 import type { Range } from "../engine/range";
 import { normalizeState, type EventState, type UserState } from "../engine/state";
-import type { Assignment, EventConfig, SeriesConfig } from "../series/types";
+import type { Assignment, EventConfig, MedalTier, SeriesConfig } from "../series/types";
 import { esc, fmt, fmtDates, fmtEur, fmtRange } from "./format";
 import { getLang, LANGUAGES, m, setLang, tx, type Lang } from "./i18n";
 import { loadState, saveState } from "./storage";
+
+/**
+ * Render a medal tier's name, coloured after its metal when it has one.
+ *
+ * @param md - Medal tier.
+ * @returns Escaped HTML.
+ */
+function medalName(md: MedalTier): string {
+  const name = esc(tx(md.name));
+  return md.metal ? `<span class="metal metal-${md.metal}">${name}</span>` : name;
+}
 
 /**
  * Interactive forecast page for one series.
@@ -80,7 +91,7 @@ export class SeriesPage {
         <p class="muted">${fmtDates(c.startDate, c.endDate)} ${c.startDate.slice(0, 4)} ·
           <a href="${esc(c.infoUrl)}" target="_blank" rel="noopener">${esc(t.officialAnnouncement)}</a></p>
         <ul class="medals">
-          ${c.medals.map((md) => `<li><strong>${esc(tx(md.name))}</strong> ${fmt(md.tokens)}</li>`).join("")}
+          ${c.medals.map((md) => `<li><strong>${medalName(md)}</strong> ${fmt(md.tokens)}</li>`).join("")}
         </ul>
       </header>
 
@@ -479,25 +490,27 @@ export class SeriesPage {
       parts.push(`<div class="warnings">${f.warnings.map((w) => `<p>⚠ ${esc(warningText(w))}</p>`).join("")}</div>`);
     }
 
+    // Label, value and an optional sub-line; the sub-line is HTML so medal
+    // names in it keep their metal colour.
     const stats: [string, string, string?][] = [];
     if (f.season === "running") {
-      stats.push([t.daysElapsed, t.daysOf(f.elapsedDays, f.totalDays), t.daysLeftAfterToday(f.remainingDays)]);
+      stats.push([t.daysElapsed, t.daysOf(f.elapsedDays, f.totalDays), esc(t.daysLeftAfterToday(f.remainingDays))]);
     } else if (f.season === "upcoming") {
-      stats.push([t.season, t.notStartedSeason, t.daysInTotal(f.totalDays)]);
+      stats.push([t.season, t.notStartedSeason, esc(t.daysInTotal(f.totalDays))]);
     } else {
       stats.push([t.season, t.finished]);
     }
     stats.push([t.eventTokensEarned, fmtRange(f.eventsEarned)]);
     if (f.elapsedDays > 0) stats.push([t.pastBountyTokens, fmtRange(f.pastBountyTokens)]);
     if (f.averagePerDay) {
-      stats.push([t.yourPace, t.perDay(fmtRange(f.averagePerDay, true)), this.paceAsBounties(f.averagePerDay)]);
+      stats.push([t.yourPace, t.perDay(fmtRange(f.averagePerDay, true)), esc(this.paceAsBounties(f.averagePerDay))]);
     }
-    stats.push([t.committedToCome, fmtRange(f.committedRemaining), t.committedHint]);
+    stats.push([t.committedToCome, fmtRange(f.committedRemaining), esc(t.committedHint)]);
     if (f.projection) stats.push([t.projectedTotal, fmtRange(f.projection), this.tierNames(f.projection)]);
 
     parts.push(
       `<dl class="stats">${stats
-        .map(([k, v, sub]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd>${sub ? `<dd class="muted">${esc(sub)}</dd>` : ""}</div>`)
+        .map(([k, v, sub]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd>${sub ? `<dd class="muted">${sub}</dd>` : ""}</div>`)
         .join("")}</dl>`,
     );
 
@@ -517,12 +530,12 @@ export class SeriesPage {
    * Names of the medal tiers reached at both ends of a total.
    *
    * @param r - Projected total.
-   * @returns e.g. "Gold" or "Silver – Gold".
+   * @returns HTML such as "Gold" or "Silver – Gold", coloured by metal.
    */
   private tierNames(r: Range): string {
     const tier = (v: number) => {
       const reached = [...this.config.medals].reverse().find((md) => v >= md.tokens);
-      return reached ? tx(reached.name) : m().noMedal;
+      return reached ? medalName(reached) : esc(m().noMedal);
     };
     return tier(r.min) === tier(r.max) ? tier(r.min) : `${tier(r.min)} – ${tier(r.max)}`;
   }
@@ -554,7 +567,7 @@ export class SeriesPage {
    */
   private renderTier(tier: TierAnalysis, f: Forecast): string {
     const t = m();
-    const head = `<h3>${esc(tx(tier.tier.name))} <span class="muted">(${fmt(tier.tier.tokens)})</span></h3>`;
+    const head = `<h3>${medalName(tier.tier)} <span class="muted">(${fmt(tier.tier.tokens)})</span></h3>`;
     if (tier.reached) return `<div class="tier tier-ok">${head}<p>${esc(t.alreadyUnlocked)}</p></div>`;
 
     const lines: string[] = [];

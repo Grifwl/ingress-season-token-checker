@@ -58,9 +58,9 @@ export const cygnus: SeriesConfig = {
   startDate: "2026-10-01",
   endDate: "2026-12-31",
   medals: [
-    { name: { en: "Bronze", es: "Bronce" }, tokens: 6000 },
-    { name: { en: "Silver", es: "Plata" }, tokens: 12000 },
-    { name: { en: "Gold", es: "Oro" }, tokens: 24000 },
+    { name: { en: "Bronze", es: "Bronce" }, tokens: 6000, metal: "bronze" },
+    { name: { en: "Silver", es: "Plata" }, tokens: 12000, metal: "silver" },
+    { name: { en: "Gold", es: "Oro" }, tokens: 24000, metal: "gold" },
   ],
   dailyBounties: {
     // 4 free bounties (10 / 30 / 40 / 60 tokens a day) plus 4 paid ones

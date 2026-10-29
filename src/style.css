@@ -21,6 +21,11 @@
   --badge-past-text: #b0461f;
   --badge-inperson: #b07a00;
   --badge-inperson-text: #8a6100;
+  /* Medal metals, dark enough to read on white. */
+  --metal-bronze: #9a5a24;
+  --metal-silver: #6b7480;
+  --metal-gold: #a37800;
+  --metal-platinum: #4f7f8c;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -41,6 +46,10 @@
     --badge-past-text: #ffad90;
     --badge-inperson: #e0b13d;
     --badge-inperson-text: #f0c85e;
+    --metal-bronze: #d9925a;
+    --metal-silver: #a9b4c2;
+    --metal-gold: #e9c03c;
+    --metal-platinum: #a9d4dd;
     color-scheme: dark;
   }
 }
@@ -89,6 +98,32 @@ h4 { margin: 0; font-size: 1rem; }
 .page-header { margin-bottom: 16px; }
 .medals { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 8px 0 0; }
 .medals li { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 12px; }
+/* Medal names take the colour of their metal wherever they appear. */
+.metal { font-weight: 600; color: var(--metal); }
+.metal-bronze { --metal: var(--metal-bronze); }
+.metal-silver { --metal: var(--metal-silver); }
+.metal-gold { --metal: var(--metal-gold); }
+.metal-platinum { --metal: var(--metal-platinum); }
+/*
+ * Polished-metal look: a vertical gradient clipped to the glyphs, going from
+ * a highlight down to the base colour, then jumping abruptly to a shadow (the
+ * reflected horizon that makes shiny metal read as metal) and recovering.
+ * Browsers without text clipping keep the flat colour above.
+ */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) and (color: color-mix(in srgb, red, blue)) {
+  .metal {
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--metal) 55%, white) 0%,
+      var(--metal) 46%,
+      color-mix(in srgb, var(--metal) 65%, black) 54%,
+      var(--metal) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
 
 .card {
   background: var(--surface);

@@ -18,12 +18,17 @@
  */
 export type LocalizedText = string | { en: string; es?: string };
 
+/** Metal a medal tier is made of; decides the colour its name is shown in. */
+export type MedalMetal = "bronze" | "silver" | "gold" | "platinum";
+
 /** One tier of the season medal, e.g. Bronze / Silver / Gold. */
 export interface MedalTier {
   /** Display name of the tier. */
   name: LocalizedText;
   /** Tokens needed to unlock the tier. */
   tokens: number;
+  /** Metal of the tier; when omitted its name is shown in the text colour. */
+  metal?: MedalMetal;
 }
 
 /** Extra tokens granted once a given number of daily bounties is reached. */
