@@ -1,5 +1,5 @@
 import "./style.css";
-import { allSeries, findSeries } from "./series";
+import { allSeries, currentSeries, findSeries } from "./series";
 import { esc, fmtDates } from "./ui/format";
 import { getLang, m, setLang, type Lang } from "./ui/i18n";
 import { pageFooter, renderPrivacy } from "./ui/legal";
@@ -9,13 +9,23 @@ import { languagePicker, SeriesPage } from "./ui/seriesPage";
  * Entry point and router.
  *
  * Each series lives at its own path (`/cygnus`, ...). The root lists every
- * series and `/privacy` holds the privacy page; any other path shows a
+ * series, `/current` redirects to the season in progress and `/privacy`
+ * holds the privacy page; any other path shows a
  * "not found" message. The hosting falls back
  * to this same page for every path, so routing happens entirely here.
  */
 function main(): void {
   const root = document.getElementById("app")!;
   const slug = location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+
+  // `/current` is a stable link (e.g. for social profiles) that always
+  // leads to the season in progress. `replace` keeps it out of the history
+  // so the back button does not bounce through the redirect again.
+  if (slug === "current") {
+    location.replace(`/${currentSeries().id}`);
+    return;
+  }
+
   const config = slug ? findSeries(slug) : undefined;
 
   if (config) {

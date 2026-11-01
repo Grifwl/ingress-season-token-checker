@@ -4,7 +4,7 @@ import { assignmentEarned, assignmentRemaining, eventMaxTokens } from "../src/en
 import { bountyPlan, daysToReach, forecast } from "../src/engine/forecast";
 import { cmuStoreCents, paidDaysCost, unlockCmu } from "../src/engine/pricing";
 import { normalizeState } from "../src/engine/state";
-import { allSeries } from "../src/series";
+import { allSeries, currentSeries } from "../src/series";
 import { cygnus } from "../src/series/cygnus";
 import { enforceAssignmentOrder, isDetailed } from "../src/engine/events";
 
@@ -343,5 +343,16 @@ describe("assignment order", () => {
   it("applies the order to saved answers", () => {
     const state = normalizeState(cygnus, { events: { "noise-floor": { assignments: [2, 4, 4, 4] } } });
     expect(state.events["noise-floor"]!.assignments).toEqual([2, 0, 0, 0]);
+  });
+});
+
+describe("currentSeries", () => {
+  it("picks the newest series that has started", () => {
+    expect(currentSeries(cygnus.startDate).id).toBe(cygnus.id);
+    expect(currentSeries("2099-01-01").id).toBe(allSeries[0]!.id);
+  });
+
+  it("falls back to the earliest series before any has started", () => {
+    expect(currentSeries("2000-01-01").id).toBe(allSeries[allSeries.length - 1]!.id);
   });
 });

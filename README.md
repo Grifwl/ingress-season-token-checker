@@ -6,6 +6,8 @@ A web page that forecasts which Ingress season medal you will reach, and
 what it takes to reach the next one. It runs at
 [season.grifwl.blue](https://season.grifwl.blue), with one page per season
 (for example [`/cygnus`](https://season.grifwl.blue/cygnus)).
+[`/current`](https://season.grifwl.blue/current) always opens the season
+in progress.
 
 ## What it does
 

@@ -6,6 +6,8 @@ Una página web que prevé a qué medalla de temporada de Ingress llegarás y
 qué necesitas para alcanzar la siguiente. Funciona en
 [season.grifwl.blue](https://season.grifwl.blue), con una página por
 temporada (por ejemplo [`/cygnus`](https://season.grifwl.blue/cygnus)).
+[`/current`](https://season.grifwl.blue/current) abre siempre la
+temporada en curso.
 
 ## Qué hace
 
