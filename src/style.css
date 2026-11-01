@@ -214,3 +214,20 @@ table.mini caption { text-align: left; font-weight: 600; padding-bottom: 2px; }
 .warnings { border-left: 4px solid var(--maybe); padding: 4px 12px; margin-bottom: 12px; }
 .undecided { padding-left: 20px; }
 .series-list { margin: 0; padding-left: 20px; }
+
+/* Privacy page: readable line length, tighter headings than the cards. */
+.prose { max-width: 720px; }
+.prose h2 { font-size: 1.05rem; margin: 1.2em 0 0.3em; }
+.prose h2:first-child { margin-top: 0; }
+.prose p { margin: 0; }
+
+/* Footer: discreet, centred, separated from the content above. */
+.page-footer {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+.page-footer p { margin: 2px 0; }

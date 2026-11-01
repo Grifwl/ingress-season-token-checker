@@ -234,6 +234,36 @@ const en = {
   inPersonNeeded: (list: string) => `attend at least ${list}.`,
   and: " and ",
   notDecided: "Not decided yet",
+
+  sourceCode: "Source code",
+  trademarkDisclaimer:
+    "Ingress is a trademark of Niantic Spatial. This site is not affiliated with or endorsed by Niantic Spatial.",
+  privacyTitle: "Privacy",
+  privacyUpdated: "Last updated: 1 November 2026",
+  privacyOwnerTitle: "Who runs this site",
+  privacyOwner: (owner: string) =>
+    `This site and the grifwl.blue domain are run by ${owner}, an Ingress agent, as a personal, ` +
+    "non-commercial project.",
+  privacyStoredTitle: "What is stored",
+  privacyStored:
+    "Your answers on each season page and your language choice are saved in your own browser " +
+    "(<code>localStorage</code>), so they are still there next time. They are never sent anywhere: every " +
+    "calculation runs on your device. You can delete them at any time by clearing this site's data in your browser.",
+  privacyNotCollectedTitle: "What is not collected",
+  privacyNotCollected:
+    "No cookies, no analytics or tracking, no ads and no accounts. " +
+    "The site loads no third-party resources such as fonts or scripts.",
+  privacyHostingTitle: "Hosting",
+  privacyHosting: (policy: string) =>
+    "The site is served by Cloudflare. Like any web host, Cloudflare processes the technical data needed " +
+    `to deliver the pages, such as your IP address (see ${policy}). The site owner keeps no access logs.`,
+  cloudflarePolicy: "Cloudflare's privacy policy",
+  privacyLinksTitle: "External links",
+  privacyLinks: "Links to ingress.com and other sites lead to pages governed by their own privacy policies.",
+  privacyContactTitle: "Contact",
+  privacyContact: (issue: string, owner: string) =>
+    `For questions or problems, open ${issue} or contact ${owner}.`,
+  githubIssue: "an issue on GitHub",
 };
 
 /** Shape every language must implement. */
@@ -367,6 +397,38 @@ const es: Messages = {
   inPersonNeeded: (list) => `tienes que asistir como mínimo a ${list}.`,
   and: " y ",
   notDecided: "Sin decidir",
+
+  sourceCode: "Código fuente",
+  trademarkDisclaimer:
+    "Ingress es una marca de Niantic Spatial. Este sitio no está afiliado a Niantic Spatial ni cuenta con su respaldo.",
+  privacyTitle: "Privacidad",
+  privacyUpdated: "Última actualización: 1 de noviembre de 2026",
+  privacyOwnerTitle: "Quién gestiona este sitio",
+  privacyOwner: (owner) =>
+    `Este sitio y el dominio grifwl.blue los gestiona ${owner}, agente de Ingress, como proyecto personal ` +
+    "sin ánimo de lucro.",
+  privacyStoredTitle: "Qué se guarda",
+  privacyStored:
+    "Tus respuestas en cada página de temporada y el idioma elegido se guardan en tu propio navegador " +
+    "(<code>localStorage</code>), para que sigan ahí la próxima vez. Nunca se envían a ninguna parte: todos " +
+    "los cálculos se hacen en tu dispositivo. Puedes borrarlas cuando quieras eliminando los datos de este " +
+    "sitio en tu navegador.",
+  privacyNotCollectedTitle: "Qué no se recoge",
+  privacyNotCollected:
+    "Sin cookies, sin analíticas ni rastreo, sin publicidad y sin cuentas. " +
+    "El sitio no carga recursos de terceros como tipografías o scripts.",
+  privacyHostingTitle: "Alojamiento",
+  privacyHosting: (policy) =>
+    "El sitio lo sirve Cloudflare. Como cualquier alojamiento web, Cloudflare trata los datos técnicos " +
+    `necesarios para entregar las páginas, como tu dirección IP (consulta ${policy}). ` +
+    "El propietario del sitio no guarda registros de acceso.",
+  cloudflarePolicy: "la política de privacidad de Cloudflare",
+  privacyLinksTitle: "Enlaces externos",
+  privacyLinks: "Los enlaces a ingress.com y a otros sitios llevan a páginas que se rigen por sus propias políticas de privacidad.",
+  privacyContactTitle: "Contacto",
+  privacyContact: (issue, owner) =>
+    `Para dudas o problemas, abre ${issue} o contacta con ${owner}.`,
+  githubIssue: "una incidencia en GitHub",
 };
 
 const messages: Record<Lang, Messages> = { en, es };

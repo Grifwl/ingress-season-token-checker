@@ -38,7 +38,8 @@ whose bounty breakdown is unpublished). The engine handles every uncertain
 figure as a `[min, max]` range, so results show the worst and best cases.
 They get narrower as the series config is refined.
 
-Your answers are only stored in your own browser (`localStorage`).
+Your answers are only stored in your own browser (`localStorage`); see the
+[privacy page](https://season.grifwl.blue/privacy).
 
 The interface is available in English (default) and Spanish. It follows the
 browser's language and can be switched from the header.

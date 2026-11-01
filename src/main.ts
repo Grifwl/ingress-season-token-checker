@@ -2,13 +2,15 @@ import "./style.css";
 import { allSeries, findSeries } from "./series";
 import { esc, fmtDates } from "./ui/format";
 import { getLang, m, setLang, type Lang } from "./ui/i18n";
+import { pageFooter, renderPrivacy } from "./ui/legal";
 import { languagePicker, SeriesPage } from "./ui/seriesPage";
 
 /**
  * Entry point and router.
  *
  * Each series lives at its own path (`/cygnus`, ...). The root lists every
- * series; any other path shows a "not found" message. The hosting falls back
+ * series and `/privacy` holds the privacy page; any other path shows a
+ * "not found" message. The hosting falls back
  * to this same page for every path, so routing happens entirely here.
  */
 function main(): void {
@@ -22,7 +24,11 @@ function main(): void {
     return;
   }
 
-  const renderStatic = () => (slug ? renderNotFound(root, slug) : renderIndex(root));
+  const renderStatic = () => {
+    if (!slug) renderIndex(root);
+    else if (slug === "privacy") renderPrivacy(root, `<div class="top-bar"><a href="/">${esc(m().allSeries)}</a>${languagePicker()}</div>`);
+    else renderNotFound(root, slug);
+  };
   root.addEventListener("change", (e) => {
     const target = e.target as HTMLSelectElement;
     if (target.dataset.field === "lang") {
@@ -55,7 +61,8 @@ function renderIndex(root: HTMLElement): void {
             <span class="muted">${fmtDates(s.startDate, s.endDate)} ${s.startDate.slice(0, 4)}</span></li>`)
           .join("")}
       </ul>
-    </section>`;
+    </section>
+    ${pageFooter()}`;
 }
 
 /**
@@ -73,7 +80,8 @@ function renderNotFound(root: HTMLElement, slug: string): void {
       <div class="top-bar"><span></span>${languagePicker()}</div>
       <h1>${esc(t.notFoundTitle)}</h1>
       <p>${esc(t.notFound(slug))} <a href="/">${esc(t.seeAllSeries)}</a>.</p>
-    </header>`;
+    </header>
+    ${pageFooter()}`;
 }
 
 main();

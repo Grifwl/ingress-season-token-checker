@@ -26,6 +26,7 @@ import { normalizeState, type EventState, type UserState } from "../engine/state
 import type { Assignment, EventConfig, MedalTier, SeriesConfig } from "../series/types";
 import { esc, fmt, fmtDates, fmtEur, fmtRange } from "./format";
 import { getLang, LANGUAGES, m, setLang, tx, type Lang } from "./i18n";
+import { pageFooter } from "./legal";
 import { loadState, saveState } from "./storage";
 
 /**
@@ -128,6 +129,7 @@ export class SeriesPage {
 
         <aside class="card area-results" id="results" aria-live="polite"></aside>
       </div>
+      ${pageFooter()}
     `;
     this.updateResults();
   }

@@ -40,7 +40,8 @@ trata cada cifra incierta como un rango `[mín, máx]`, así que los resultados
 muestran el peor y el mejor caso. Se van estrechando a medida que se afina la
 configuración de la serie.
 
-Tus respuestas solo se guardan en tu propio navegador (`localStorage`).
+Tus respuestas solo se guardan en tu propio navegador (`localStorage`); consulta
+la [página de privacidad](https://season.grifwl.blue/privacy).
 
 La interfaz está disponible en inglés (por defecto) y en castellano. Sigue el
 idioma del navegador y se puede cambiar desde la cabecera.
