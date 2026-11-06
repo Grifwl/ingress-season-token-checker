@@ -1,4 +1,4 @@
-import type { MedalTier, SeriesConfig } from "../series/types";
+import type { EventConfig, MedalTier, SeriesConfig } from "../series/types";
 import { freeDailyTokens, maxDailyTokens, relaxedDailyTokens, tokensForBounties } from "./bounties";
 import { addDays, daysBetween, monthsSpanned } from "./dates";
 import { evaluateEvent, type EventEvaluation } from "./events";
@@ -128,7 +128,11 @@ export interface Forecast {
   averagePerDay: Range | null;
   /** Event tokens still to come from events marked "yes". */
   committedRemaining: Range;
-  /** Final total if the pace is kept, `null` without history. */
+  /**
+   * Final total if the pace is kept, `null` without history. What is added
+   * to the current total is rounded down to a multiple of
+   * {@link tokenStep}, since tokens only come in those amounts.
+   */
   projection: Range | null;
   tiers: TierAnalysis[];
   evaluations: EventEvaluation[];
@@ -247,9 +251,17 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
       todayInSeason ? map(rate, (v) => Math.max(0, v - todayTokens)) : exact(0),
     );
 
-  // Step 3: projection at the current pace.
+  // Step 3: projection at the current pace. The average pace is fractional,
+  // but tokens are always granted in whole steps (10 in every series so
+  // far), so what is still to come is rounded down to the step: the result
+  // must be a total the agent can actually have. The current total is left
+  // as typed, so an odd total does not shift the projection.
+  const step = tokenStep(config);
   const projection = averagePerDay
-    ? add(exact(current), futureBounties(averagePerDay), committedRemaining)
+    ? add(
+        exact(current),
+        map(add(futureBounties(averagePerDay), committedRemaining), (v) => Math.floor(v / step) * step),
+      )
     : null;
 
   // Step 4: per-tier analysis.
@@ -327,6 +339,46 @@ export function forecast(config: SeriesConfig, state: UserState, today: string):
     undecided,
     warnings,
   };
+}
+
+/**
+ * Smallest amount every token total of the series is a multiple of: the
+ * greatest common divisor of every reward it grants (daily bounties,
+ * milestones and events).
+ *
+ * The smallest reward is not enough: with rewards of 10 and 25 a total of
+ * 35 is possible, and rounding it to a multiple of 10 would lose tokens.
+ * The divisor is the step every sum of rewards falls on.
+ *
+ * @param config - Series config.
+ * @returns The step (1 when nothing better is known).
+ */
+export function tokenStep(config: SeriesConfig): number {
+  const b = config.dailyBounties;
+  const amounts = [...b.bountyTokens, ...b.milestones.map((m) => m.tokens), ...config.events.flatMap(eventRewards)];
+  const gcd = (x: number, y: number): number => (y === 0 ? x : gcd(y, x % y));
+  // Only positive whole amounts say anything about the step.
+  const step = amounts.filter((a) => Number.isInteger(a) && a > 0).reduce(gcd, 0);
+  return step > 0 ? step : 1;
+}
+
+/**
+ * Every separate reward an event can grant.
+ *
+ * @param event - Event config.
+ * @returns Token amounts (bounties, assignment rewards, totals or maxima).
+ */
+function eventRewards(event: EventConfig): number[] {
+  switch (event.kind) {
+    case "fixed":
+      return [event.tokens];
+    case "campaign":
+      return event.assignments.flatMap((a) => ("bounties" in a ? [...a.bounties, a.reward] : [a.total]));
+    case "open":
+      // Only the maximum is known; its unpublished parts are assumed to
+      // follow the same step.
+      return [event.maxTokens];
+  }
 }
 
 /**

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { tokensForBounties } from "../src/engine/bounties";
+import { paceBreakdown, tokensForBounties } from "../src/engine/bounties";
 import { assignmentEarned, assignmentRemaining, eventMaxTokens } from "../src/engine/events";
-import { bountyPlan, daysToReach, forecast } from "../src/engine/forecast";
+import { bountyPlan, daysToReach, forecast, tokenStep } from "../src/engine/forecast";
 import { cmuStoreCents, paidDaysCost, unlockCmu } from "../src/engine/pricing";
 import { normalizeState } from "../src/engine/state";
 import { allSeries, currentSeries } from "../src/series";
@@ -43,6 +43,49 @@ describe("daily bounties", () => {
     expect(counts).toEqual([0, 10, 30, 40, 60, 70, 80, 90, 100]);
   });
 });
+
+describe("paceBreakdown", () => {
+  const b = cygnus.dailyBounties;
+
+  it("splits a pace between two neighbouring counts", () => {
+    // 22 days of 4 (60) + 14 days of 3 (40) = 1,880 tokens.
+    const p = paceBreakdown(b, 1880 / 36, 36);
+    expect(p).toMatchObject({ lower: 3, upper: 4, upperDays: 22, lowerDays: 14 });
+    expect(p.bounties).toBeCloseTo(3.611, 3);
+  });
+
+  it("never rounds days up to a count not reached", () => {
+    // 1,870 cannot be split exactly: 21 days of 4, the rest of 3.
+    expect(paceBreakdown(b, 1870 / 36, 36)).toMatchObject({ upperDays: 21, lowerDays: 15 });
+  });
+
+  it("handles exact counts, paid bounties and the maximum", () => {
+    expect(paceBreakdown(b, 60, 10)).toMatchObject({ lower: 4, upperDays: 0, lowerDays: 10 });
+    expect(paceBreakdown(b, 63, 10)).toMatchObject({ lower: 4, upper: 5, upperDays: 3, lowerDays: 7 });
+    expect(paceBreakdown(b, 100, 10)).toMatchObject({ bounties: 8, upperDays: 10, lowerDays: 0 });
+    expect(paceBreakdown(b, 0, 10)).toMatchObject({ lower: 0, upper: 1, upperDays: 0 });
+  });
+});
+
+describe("tokenStep", () => {
+  it("is 10 for Cygnus", () => {
+    expect(tokenStep(cygnus)).toBe(10);
+  });
+
+  it("uses the greatest common divisor, not the smallest reward", () => {
+    const config = { ...cygnus, dailyBounties: { ...noMilestones(), bountyTokens: [10, 25] }, events: [] };
+    expect(tokenStep(config)).toBe(5);
+  });
+});
+
+/**
+ * Daily bounty config without milestones, for step tests.
+ *
+ * @returns A copy of Cygnus' daily bounties with no milestones.
+ */
+function noMilestones() {
+  return { ...cygnus.dailyBounties, milestones: [] };
+}
 
 describe("assignments", () => {
   const nf = cygnus.events.find((e) => e.id === "noise-floor");
@@ -215,6 +258,20 @@ describe("forecast", () => {
     // 3000 - 2500 (FS) - 2000 (GB) is negative -> warning, clamped to 0.
     expect(f.warnings).toHaveLength(1);
     expect(f.pastBountyTokens).toEqual({ min: 0, max: 0 });
+  });
+
+  it("rounds the projection down to whole token steps", () => {
+    // 1,880 bounty tokens over 36 days = 52.2 a day; 56 more days (today
+    // included) add 2,924.4, rounded down to 2,920. The remaining global
+    // and Dispatch events are committed by default (8,000 + 2,000).
+    const state = normalizeState(cygnus, {
+      currentTokens: 1880,
+      bountiesToday: 0,
+      events: { "global-battles": { intent: "no" }, "noise-floor": { intent: "no" }, "leonids": { intent: "no" } },
+    });
+    const f = forecast(cygnus, state, "2026-11-06");
+    expect(f.committedRemaining).toEqual({ min: 10000, max: 10000 });
+    expect(f.projection).toEqual({ min: 14800, max: 14800 });
   });
 
   it("plans the in-person events needed before the season starts", () => {

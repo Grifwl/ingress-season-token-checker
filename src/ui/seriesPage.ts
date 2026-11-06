@@ -1,4 +1,4 @@
-import { tokensForBounties } from "../engine/bounties";
+import { paceBreakdown, tokensForBounties } from "../engine/bounties";
 import { todayIso, isIsoDate } from "../engine/dates";
 import {
   canAwaitTokens,
@@ -25,7 +25,7 @@ import type { Range } from "../engine/range";
 import { normalizeState, type EventState, type UserState } from "../engine/state";
 import type { Assignment, EventConfig, MedalTier, SeriesConfig } from "../series/types";
 import { esc, fmt, fmtDates, fmtEur, fmtRange } from "./format";
-import { getLang, LANGUAGES, m, setLang, tx, type Lang } from "./i18n";
+import { getLang, LANGUAGES, locale, m, setLang, tx, type Lang } from "./i18n";
 import { pageFooter } from "./legal";
 import { loadState, saveState } from "./storage";
 
@@ -505,7 +505,7 @@ export class SeriesPage {
     stats.push([t.eventTokensEarned, fmtRange(f.eventsEarned)]);
     if (f.elapsedDays > 0) stats.push([t.pastBountyTokens, fmtRange(f.pastBountyTokens)]);
     if (f.averagePerDay) {
-      stats.push([t.yourPace, t.perDay(fmtRange(f.averagePerDay, true)), esc(this.paceAsBounties(f.averagePerDay))]);
+      stats.push([t.yourPace, t.perDay(fmtRange(f.averagePerDay, true)), esc(this.paceAsBounties(f.averagePerDay, f.elapsedDays))]);
     }
     stats.push([t.committedToCome, fmtRange(f.committedRemaining), esc(t.committedHint)]);
     if (f.projection) stats.push([t.projectedTotal, fmtRange(f.projection), this.tierNames(f.projection)]);
@@ -543,22 +543,29 @@ export class SeriesPage {
   }
 
   /**
-   * Describe a daily pace in terms of bounties.
+   * Describe a daily pace in terms of bounties: the equivalent bounties a
+   * day, truncated to one decimal so that a count is only shown once it is
+   * fully reached, and the equivalent mix of days behind it.
+   *
+   * An uncertain pace is described by the middle of its interval, since a
+   * range of mixes would be hard to read.
    *
    * @param avg - Average tokens per day.
-   * @returns e.g. "≈ 3 bounties a day".
+   * @param days - Days the average was taken over.
+   * @returns e.g. "≈ 3.6 bounties a day · equivalent to 22 days of 4 and 14 of 3".
    */
-  private paceAsBounties(avg: Range): string {
+  private paceAsBounties(avg: Range, days: number): string {
+    const t = m();
     const b = this.config.dailyBounties;
-    const counts = b.bountyTokens.map((_, i) => i + 1);
-    const nearest = (v: number) =>
-      counts.reduce(
-        (best, n) => (Math.abs(tokensForBounties(b, n) - v) < Math.abs(tokensForBounties(b, best) - v) ? n : best),
-        0,
-      );
-    const lo = nearest(avg.min);
-    const hi = nearest(avg.max);
-    return m().paceBounties(lo === hi ? String(lo) : `${lo}–${hi}`);
+    const p = paceBreakdown(b, (avg.min + avg.max) / 2, days);
+    const shown = Math.floor(p.bounties * 10 + 1e-9) / 10;
+    const exactCount = p.upperDays === 0 || p.lowerDays === 0;
+    const count = exactCount
+      ? String(p.upperDays === 0 ? p.lower : p.upper)
+      : new Intl.NumberFormat(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(shown);
+    const parts = [t.paceBounties(count, !exactCount)];
+    if (!exactCount) parts.push(t.paceMix(p.upperDays, p.upper, p.lowerDays, p.lower, p.upper > b.freeCount));
+    return parts.join(" · ");
   }
 
   /**

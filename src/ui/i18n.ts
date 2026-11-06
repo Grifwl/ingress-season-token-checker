@@ -198,7 +198,10 @@ const en = {
   pastBountyTokens: "Daily bounty tokens before today",
   yourPace: "Your pace",
   perDay: (x: string) => `${x} / day`,
-  paceBounties: (x: string) => `≈ ${x} bounties a day`,
+  paceBounties: (x: string, approx: boolean) => `${approx ? "≈ " : ""}${x} bounties a day`,
+  paceMix: (upperDays: number, upper: number, lowerDays: number, lower: number, paid: boolean) =>
+    `equivalent to ${upperDays} ${pl(upperDays, "day", "days")} of ${upper}${paid ? " (paid)" : ""} ` +
+    `and ${lowerDays} of ${lower}`,
   committedToCome: "Committed event tokens to come",
   committedHint: "events marked “I'll do it”",
   projectedTotal: "Projected final total",
@@ -364,7 +367,10 @@ const es: Messages = {
   pastBountyTokens: "Tokens de bounties diarios antes de hoy",
   yourPace: "Tu ritmo",
   perDay: (x) => `${x} / día`,
-  paceBounties: (x) => `≈ ${x} bounties al día`,
+  paceBounties: (x, approx) => `${approx ? "≈ " : ""}${x} bounties al día`,
+  paceMix: (upperDays, upper, lowerDays, lower, paid) =>
+    `equivale a ${upperDays} ${pl(upperDays, "día", "días")} de ${upper}${paid ? " (de pago)" : ""} ` +
+    `y ${lowerDays} de ${lower}`,
   committedToCome: "Tokens de eventos comprometidos",
   committedHint: "eventos marcados como «Lo haré»",
   projectedTotal: "Total final previsto",
