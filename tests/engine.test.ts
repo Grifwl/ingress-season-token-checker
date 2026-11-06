@@ -7,6 +7,8 @@ import { normalizeState } from "../src/engine/state";
 import { allSeries, currentSeries } from "../src/series";
 import { cygnus } from "../src/series/cygnus";
 import { enforceAssignmentOrder, isDetailed } from "../src/engine/events";
+import { fmtSchedule } from "../src/ui/format";
+import { setLang } from "../src/ui/i18n";
 
 describe("series configs", () => {
   for (const series of allSeries) {
@@ -411,5 +413,46 @@ describe("currentSeries", () => {
 
   it("falls back to the earliest series before any has started", () => {
     expect(currentSeries("2000-01-01").id).toBe(allSeries[allSeries.length - 1]!.id);
+  });
+});
+
+describe("fmtSchedule", () => {
+  /** Format in English so the expectations do not depend on the host locale. */
+  const en = (start: string, end: string, today: string, withYear = false) => {
+    setLang("en");
+    return fmtSchedule(start, end, today, withYear);
+  };
+
+  it("shows length and time to start for upcoming events", () => {
+    expect(en("2026-11-25", "2026-12-16", "2026-11-06")).toMatch(/· 22 days · starts in 19 days$/);
+    expect(en("2026-11-25", "2026-12-16", "2026-11-24")).toMatch(/· starts tomorrow$/);
+  });
+
+  it("shows time to end for events in progress", () => {
+    expect(en("2026-10-12", "2026-11-11", "2026-11-06")).toMatch(/· 31 days · ends in 5 days$/);
+    expect(en("2026-10-12", "2026-11-11", "2026-11-10")).toMatch(/· ends tomorrow$/);
+    expect(en("2026-10-12", "2026-11-11", "2026-11-11")).toMatch(/· ends today$/);
+  });
+
+  it("shows only the length for finished events", () => {
+    expect(en("2026-10-01", "2026-10-28", "2026-11-06")).toMatch(/· 28 days$/);
+  });
+
+  it("shows only the countdown for one-day events", () => {
+    expect(en("2026-11-07", "2026-11-07", "2026-11-04")).toMatch(/^\S+ \S+ · in 3 days$/);
+    expect(en("2026-11-07", "2026-11-07", "2026-11-06")).toMatch(/· tomorrow$/);
+    expect(en("2026-11-07", "2026-11-07", "2026-11-07")).toMatch(/· today$/);
+    expect(en("2026-11-07", "2026-11-07", "2026-11-08")).not.toContain("·");
+  });
+
+  it("can append the year for the season header", () => {
+    expect(en("2026-10-01", "2026-12-31", "2026-11-06", true)).toMatch(/ 2026 · 92 days · ends in 55 days$/);
+  });
+
+  it("uses Spanish wording", () => {
+    setLang("es");
+    expect(fmtSchedule("2026-11-25", "2026-12-16", "2026-11-06")).toMatch(/· 22 días · empieza en 19 días$/);
+    expect(fmtSchedule("2026-11-07", "2026-11-07", "2026-11-06")).toMatch(/· mañana$/);
+    setLang("en");
   });
 });

@@ -1,5 +1,6 @@
 import type { Range } from "../engine/range";
-import { locale } from "./i18n";
+import { daysBetween } from "../engine/dates";
+import { locale, m } from "./i18n";
 
 /**
  * Format an integer with the thousands separator of the current language.
@@ -47,6 +48,40 @@ export function fmtDates(start: string, end: string): string {
   const f = (iso: string) =>
     new Date(`${iso}T00:00:00Z`).toLocaleDateString(locale(), { day: "numeric", month: "short", timeZone: "UTC" });
   return start === end ? f(start) : `${f(start)} – ${f(end)}`;
+}
+
+/**
+ * Format the dates of an event or season together with its length and, while
+ * it has not finished yet, how long until it starts or ends.
+ *
+ * The countdown is measured from the forecast date rather than the real date
+ * so it always agrees with the phase badge when the agent simulates another
+ * day. Lengths count both ends (12 Oct – 11 Nov is 31 days), and the
+ * countdown counts to the target day itself, so the last day of an event
+ * reads "ends today" and the day before "ends tomorrow".
+ *
+ * One-day events skip both the length and the "ends" wording, which would
+ * only repeat the date: they just say how long until they happen.
+ *
+ * @param start - ISO first day.
+ * @param end - ISO last day.
+ * @param today - ISO forecast date.
+ * @param withYear - Whether to append the year after the dates.
+ * @returns e.g. "12 Oct – 11 Nov · 31 days · ends in 5 days" or "7 Nov · tomorrow".
+ */
+export function fmtSchedule(start: string, end: string, today: string, withYear = false): string {
+  const t = m();
+  const parts = [withYear ? `${fmtDates(start, end)} ${start.slice(0, 4)}` : fmtDates(start, end)];
+  const untilStart = daysBetween(today, start);
+  const untilEnd = daysBetween(today, end);
+  if (start === end) {
+    if (untilStart >= 0) parts.push(t.relativeDays(untilStart));
+  } else {
+    parts.push(t.durationDays(daysBetween(start, end) + 1));
+    if (untilStart > 0) parts.push(t.startsWhen(t.relativeDays(untilStart)));
+    else if (untilEnd >= 0) parts.push(t.endsWhen(t.relativeDays(untilEnd)));
+  }
+  return parts.join(" · ");
 }
 
 /**

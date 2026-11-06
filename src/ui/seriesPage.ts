@@ -24,7 +24,7 @@ import type { PaidDaysCost } from "../engine/pricing";
 import type { Range } from "../engine/range";
 import { normalizeState, type EventState, type UserState } from "../engine/state";
 import type { Assignment, EventConfig, MedalTier, SeriesConfig } from "../series/types";
-import { esc, fmt, fmtDates, fmtEur, fmtRange } from "./format";
+import { esc, fmt, fmtEur, fmtRange, fmtSchedule } from "./format";
 import { getLang, LANGUAGES, locale, m, setLang, tx, type Lang } from "./i18n";
 import { pageFooter } from "./legal";
 import { loadState, saveState } from "./storage";
@@ -89,7 +89,7 @@ export class SeriesPage {
           ${languagePicker()}
         </div>
         <h1>${esc(t.pageTitle(c.name))}</h1>
-        <p class="muted">${fmtDates(c.startDate, c.endDate)} ${c.startDate.slice(0, 4)} ·
+        <p class="muted">${esc(fmtSchedule(c.startDate, c.endDate, this.today, true))} ·
           <a href="${esc(c.infoUrl)}" target="_blank" rel="noopener">${esc(t.officialAnnouncement)}</a></p>
         <ul class="medals">
           ${c.medals.map((md) => `<li><strong>${medalName(md)}</strong> ${fmt(md.tokens)}</li>`).join("")}
@@ -302,7 +302,7 @@ export class SeriesPage {
           <span class="badge badge-${ev.phase}">${esc(phaseLabel)}</span>
           <span class="badge ${event.inPerson ? "badge-inperson" : ""}">${esc(event.inPerson ? t.inPerson : t.remote)}</span>
         </div>
-        <p class="muted">${esc(t.upTo(fmtDates(event.startDate, event.endDate), fmt(eventMaxTokens(event))))}</p>
+        <p class="muted">${esc(t.upTo(fmtSchedule(event.startDate, event.endDate, this.today), fmt(eventMaxTokens(event))))}</p>
         ${event.notes ? `<p class="note">${esc(tx(event.notes))}</p>` : ""}
         ${event.bonus ? `<p class="note"><strong>${esc(tx(event.bonus.name))}:</strong> ${esc(tx(event.bonus.note))}</p>` : ""}
         <div class="rows">${rows.join("")}</div>
@@ -522,7 +522,7 @@ export class SeriesPage {
       parts.push(`
         <h3>${esc(t.notDecided)}</h3>
         <ul class="undecided">${f.undecided
-          .map((e) => `<li>${esc(tx(e.event.name))} <span class="muted">(${fmtDates(e.event.startDate, e.event.endDate)})</span>: +${fmtRange(e.potential)}</li>`)
+          .map((e) => `<li>${esc(tx(e.event.name))} <span class="muted">(${esc(fmtSchedule(e.event.startDate, e.event.endDate, this.today))})</span>: +${fmtRange(e.potential)}</li>`)
           .join("")}</ul>`);
     }
     return parts.join("");
