@@ -684,8 +684,11 @@ export class SeriesPage {
 }
 
 /**
- * Coloured token summary of an event: earned and committed tokens in blue,
- * forfeited ones in red, undecided ones neutral.
+ * Coloured token summary of an event: earned tokens (received bonus
+ * included) in cyan, committed ones in blue, forfeited ones in red,
+ * undecided ones neutral. Earned and committed get different shades of
+ * blue so they can be told apart at a glance while staying in the
+ * Resistance palette.
  *
  * @param ev - Evaluated event.
  * @returns HTML snippet.
@@ -694,7 +697,7 @@ function eventSummary(ev: EventEvaluation): string {
   const t = m();
   const parts: string[] = [];
   if (ev.phase !== "upcoming") {
-    parts.push(span(ev.earned.max > 0 ? "pos" : "", t.earnedSummary(fmtRange(ev.earned))));
+    parts.push(span(ev.earned.max > 0 ? "got" : "", t.earnedSummary(fmtRange(ev.earned))));
   }
   // Committed tokens include those of attended events still to be granted,
   // which can be pending after the event is over.
@@ -704,7 +707,7 @@ function eventSummary(ev: EventEvaluation): string {
     parts.push(span("", t.availableSummary(fmtRange(ev.potential))));
   }
   if (ev.forfeited.max > 0) parts.push(span("neg", t.lostSummary(fmtRange(ev.forfeited))));
-  if (ev.bonus > 0) parts.push(span("pos", t.bonusSummary(fmt(ev.bonus))));
+  if (ev.bonus > 0) parts.push(span("got", t.bonusSummary(fmt(ev.bonus))));
   return parts.join(" · ");
 }
 
@@ -776,7 +779,7 @@ function row(label: string, control: string): string {
 /**
  * Wrap text in a span with an optional class.
  *
- * @param cls - CSS class ("pos", "neg" or empty).
+ * @param cls - CSS class ("got", "pos", "neg" or empty).
  * @param text - Plain text.
  */
 function span(cls: string, text: string): string {

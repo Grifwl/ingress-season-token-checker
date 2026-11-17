@@ -11,6 +11,7 @@
   --border: #dde1e6;
   --accent: #2f6fdf;
   --ok: #1565d8;
+  --earned: #00809e;
   --maybe: #b07a00;
   --no: #c23a3a;
   --badge: #eceff3;
@@ -37,6 +38,7 @@
     --border: #2d323b;
     --accent: #6ea0ff;
     --ok: #5ea2ff;
+    --earned: #3fd3ee;
     --maybe: #e0b13d;
     --no: #ef7272;
     --badge: #272b33;
@@ -154,6 +156,7 @@ input, select {
 .event p { margin: 4px 0; }
 .event-summary { font-size: 0.9rem; font-weight: 600; }
 .event-summary .pos { color: var(--ok); }
+.event-summary .got { color: var(--earned); }
 .event-summary .neg { color: var(--no); }
 
 /*
