@@ -73,10 +73,12 @@ configuración:
        obtenido.
 
    Cualquier evento puede declarar además un `bonus`: una recompensa extra
-   de cantidad desconocida que solo reciben algunos agentes (por ejemplo,
-   un bonus por clasificación). La previsión nunca cuenta con él; cuando
-   el evento termina, los agentes pueden indicar si lo han recibido y
-   cuántos tokens les ha dado.
+   que solo reciben algunos agentes (por ejemplo, un bonus por
+   clasificación). La previsión nunca cuenta con él; cuando el evento
+   termina, los agentes pueden indicar si lo han recibido y, mientras no se
+   conozca su cantidad, cuántos tokens les ha dado. Rellena su `tokens` en
+   cuanto se anuncie la cantidad para que los agentes solo tengan que
+   marcar «recibido».
 
    Los textos que ve el usuario (nombres, notas, etiquetas) pueden ser una
    cadena simple o un mapa de traducciones `{ en, es }`.

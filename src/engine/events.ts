@@ -389,7 +389,9 @@ export function canAwaitTokens(event: EventConfig): event is FixedEvent {
 /**
  * Bonus tokens declared for an event. A bonus is only granted once the event
  * is over, so answers stored for an event that has not finished yet (e.g.
- * after moving the forecast date back) are ignored.
+ * after moving the forecast date back) are ignored. When the config states
+ * the announced amount it takes precedence over whatever the agent entered
+ * before it was known.
  *
  * @param event - Event config.
  * @param state - Agent's answers for the event.
@@ -397,5 +399,6 @@ export function canAwaitTokens(event: EventConfig): event is FixedEvent {
  * @returns Declared bonus tokens, 0 when none.
  */
 export function eventBonus(event: EventConfig, state: EventState, phase: Phase): number {
-  return event.bonus && phase === "past" && state.bonusReceived ? state.bonusTokens : 0;
+  if (!event.bonus || phase !== "past" || !state.bonusReceived) return 0;
+  return event.bonus.tokens ?? state.bonusTokens;
 }

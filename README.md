@@ -67,10 +67,11 @@ Everything specific to a season lives in one config file:
        per-bounty details);
      - `open`: only the maximum is known; agents enter what they earned.
 
-   Any event can also declare a `bonus`: an extra reward of unknown amount
-   granted to only some agents (e.g. a leaderboard bonus). The forecast
-   never counts on it; once the event is over, agents can declare whether
-   they received it and how many tokens it granted.
+   Any event can also declare a `bonus`: an extra reward granted to only
+   some agents (e.g. a leaderboard bonus). The forecast never counts on it;
+   once the event is over, agents can declare whether they received it and,
+   while its amount is unknown, how many tokens it granted. Set its
+   `tokens` once the amount is announced so agents only tick "received".
    Texts shown to users (names, notes, labels) can be a plain string or a
    `{ en, es }` translation map.
 2. Register it in `src/series/index.ts`.

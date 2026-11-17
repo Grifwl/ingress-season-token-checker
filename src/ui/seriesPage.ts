@@ -275,14 +275,15 @@ export class SeriesPage {
     }
 
     // The bonus is only granted after the event, so it can only be declared
-    // once the event is over; until then its note just explains it.
+    // once the event is over; until then its note just explains it. The
+    // amount is only asked for while it has not been announced.
     if (event.bonus && ev.phase === "past") {
       rows.push(`
         <label class="row row-check">
           <input type="checkbox" data-event="${id}" data-prop="bonusReceived" ${st.bonusReceived ? "checked" : ""}>
           ${esc(t.bonusReceived(tx(event.bonus.name)))}
         </label>`);
-      if (st.bonusReceived) {
+      if (st.bonusReceived && event.bonus.tokens === undefined) {
         rows.push(
           row(
             `<span class="row-title">${esc(t.bonusTokens)}</span>`,

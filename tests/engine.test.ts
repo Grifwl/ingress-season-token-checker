@@ -365,12 +365,26 @@ describe("forecast", () => {
     const during = forecast(cygnus, state, "2026-10-20");
     expect(during.evaluations.find((e) => e.event.id === "global-battles")!.bonus).toBe(0);
 
-    // After it: 8,000 from the campaign + 1,000 bonus, never forfeited.
+    // After it: 8,000 from the campaign + the announced 13,310 bonus (which
+    // overrides the amount entered before it was known), never forfeited.
     const after = forecast(cygnus, state, "2026-11-01");
     const gb = after.evaluations.find((e) => e.event.id === "global-battles")!;
-    expect(gb.bonus).toBe(1000);
+    expect(gb.bonus).toBe(13310);
     expect(gb.forfeited).toEqual({ min: 0, max: 0 });
-    expect(after.eventsEarned).toEqual({ min: 9000, max: 9000 });
+    expect(after.eventsEarned).toEqual({ min: 21310, max: 21310 });
+  });
+
+  it("uses the entered bonus amount while it is not announced", () => {
+    const gbConfig = cygnus.events.find((e) => e.id === "global-battles")!;
+    const unannounced = {
+      ...cygnus,
+      events: cygnus.events.map((e) => (e === gbConfig ? { ...e, bonus: { ...e.bonus!, tokens: undefined } } : e)),
+    };
+    const state = normalizeState(unannounced, {
+      events: { "global-battles": { bonusReceived: true, bonusTokens: 1000 } },
+    });
+    const after = forecast(unannounced, state, "2026-11-01");
+    expect(after.evaluations.find((e) => e.event.id === "global-battles")!.bonus).toBe(1000);
   });
 });
 
