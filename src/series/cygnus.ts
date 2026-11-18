@@ -43,12 +43,18 @@ function oneDayEvents(
  * - https://ingress.com/news/2026-cygnus
  * - https://ingress.com/news/2026-cygnus-shardstorm
  * - https://ingress.com/news/2026-cygnus-globalbattles
+ * - https://ingress.com/news/2026-cygnus-globaldeploy
  * - https://ingress.com/news/2026-thekeeperswerefirst (Noise Floor details)
  * - https://ingress.com/news/2026-leonids (Leonids: Through the Ages)
  *
  * Global Battles: the post gives the per-assignment totals (1,000 / 2,500 /
  * 4,500). The bounty breakdowns of the three assignments were read in
  * the Dispatch app.
+ *
+ * Global Deploy: the post gives each Stage 1 assignment's Reso Point
+ * threshold and its tokens (2,000 / 2,000 / 4,000), but not how they are
+ * split between its bounties and its completion reward, so the
+ * assignments only carry their totals until Dispatch shows the breakdown.
  */
 export const cygnus: SeriesConfig = {
   id: "cygnus",
@@ -193,13 +199,32 @@ export const cygnus: SeriesConfig = {
       startDate: "2026-11-25",
       endDate: "2026-12-16",
       inPerson: false,
-      infoUrl: "https://ingress.com/news/2026-cygnus",
-      kind: "open",
-      maxTokens: 8000,
+      infoUrl: "https://ingress.com/news/2026-cygnus-globaldeploy",
       notes: {
-        en: "3 assignments; per-assignment details not published yet.",
-        es: "3 asignaciones; aún no se ha publicado el detalle de cada una.",
+        en:
+          "Only Stage 1 grants tokens; Stages 2 and 3 only grant items. " +
+          "Reso Point thresholds are shown for reference only: this site cannot track them.",
+        es:
+          "Solo la etapa 1 da tokens; las etapas 2 y 3 solo dan objetos. " +
+          "Los umbrales de Reso Points son solo orientativos: esta web no puede seguirlos.",
       },
+      kind: "campaign",
+      // Stage 1: three assignments, each one reached at a Reso Point
+      // threshold. Only their token totals are known (8,000 together).
+      assignments: [
+        {
+          name: { en: "Bronze tier (500 Reso Points)", es: "Nivel Bronce (500 Reso Points)" },
+          total: 2000,
+        },
+        {
+          name: { en: "Silver tier (2,500 Reso Points)", es: "Nivel Plata (2.500 Reso Points)" },
+          total: 2000,
+        },
+        {
+          name: { en: "Gold tier (5,000 Reso Points)", es: "Nivel Oro (5.000 Reso Points)" },
+          total: 4000,
+        },
+      ],
     },
     {
       id: "noise-floor",
