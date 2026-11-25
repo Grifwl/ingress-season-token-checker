@@ -64,7 +64,9 @@ Everything specific to a season lives in one config file:
      - `campaign`: Dispatch campaigns with a known assignment structure.
        Assignments can be *detailed* (bounties + reward + required count) or
        *opaque* (only the total is known; the page flags them as missing
-       per-bounty details);
+       per-bounty details). Set `steps: "assignments"` on a detailed entry
+       to make it a stage whose tokens come from completing its
+       assignments (one entry per assignment) rather than from bounties;
      - `open`: only the maximum is known; agents enter what they earned.
 
    Any event can also declare a `bonus`: an extra reward granted to only
@@ -78,6 +80,18 @@ Everything specific to a season lives in one config file:
 3. Run `npm test`. It checks every config for consistency.
 
 The series is then served at `/<id>`.
+
+## Versioning
+
+Releases use calendar versioning, `vYYYY.S.P`:
+
+- `YYYY.S` is the newest season the site offers: its year and its
+  number within that year (normally the quarter), e.g. `2026.4` for
+  Cygnus;
+- `P` is the patch number, starting at 0 and increased by every later
+  release of that season.
+
+Adding a new season bumps `YYYY.S` and resets `P` to 0.
 
 ## Development
 

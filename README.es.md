@@ -68,7 +68,10 @@ configuración:
      - `campaign`: campañas de Dispatch con estructura de asignaciones
        conocida. Las asignaciones pueden ser *detalladas* (bounties +
        recompensa + número necesario) u *opacas* (solo se conoce el total;
-       la página indica que falta el detalle de cada bounty);
+       la página indica que falta el detalle de cada bounty). Con
+       `steps: "assignments"` en una entrada detallada, esta pasa a ser una
+       etapa cuyos tokens se obtienen al completar sus asignaciones (una
+       entrada por asignación) en lugar de con bounties;
      - `open`: solo se conoce el máximo; los agentes indican lo que han
        obtenido.
 
@@ -86,6 +89,18 @@ configuración:
 3. Ejecuta `npm test`. Comprueba la coherencia de todas las configuraciones.
 
 La serie se sirve entonces en `/<id>`.
+
+## Versiones
+
+Las versiones siguen un esquema de calendario, `vAAAA.T.P`:
+
+- `AAAA.T` es la temporada más reciente que ofrece la web: su año y su
+  número dentro del año (normalmente el trimestre), p. ej. `2026.4` para
+  Cygnus;
+- `P` es el número de parche, que empieza en 0 y aumenta con cada versión
+  posterior de esa temporada.
+
+Añadir una nueva temporada cambia `AAAA.T` y reinicia `P` a 0.
 
 ## Desarrollo
 

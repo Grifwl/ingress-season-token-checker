@@ -1,6 +1,6 @@
 {
   "name": "ingress-season-token-checker",
-  "version": "0.1.0",
+  "version": "2026.4.0",
   "private": true,
   "description": "Forecast which Ingress season medal you will reach from your current token count and plans.",
   "type": "module",
