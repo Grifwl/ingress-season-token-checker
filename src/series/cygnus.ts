@@ -223,7 +223,10 @@ export const cygnus: SeriesConfig = {
         },
         {
           name: { en: "Silver tier (2,500 Reso Points)", es: "Nivel Plata (2.500 Reso Points)" },
-          total: 2000,
+          // Read in Dispatch on 2026-11-25: 1,200 / 1,800 / 2,500 Reso Points.
+          bounties: [250, 250, 500],
+          reward: 1000,
+          required: 3,
         },
         {
           name: { en: "Gold tier (5,000 Reso Points)", es: "Nivel Oro (5.000 Reso Points)" },
