@@ -207,11 +207,9 @@ export const cygnus: SeriesConfig = {
       infoUrl: "https://ingress.com/news/2026-cygnus-globaldeploy",
       notes: {
         en:
-          "Only Stage 1 grants tokens; Stages 2 and 3 only grant items. " +
-          "Reso Point thresholds are shown for reference only: this site cannot track them.",
+          "Only Stage 1 grants tokens; Stages 2 and 3 only grant items.",
         es:
-          "Solo la etapa 1 da tokens; las etapas 2 y 3 solo dan objetos. " +
-          "Los umbrales de Reso Points son solo orientativos: esta web no puede seguirlos.",
+          "Solo la etapa 1 da tokens; las etapas 2 y 3 solo dan objetos.",
       },
       kind: "campaign",
       // Stage 1: three assignments, each one reached at a Reso Point
