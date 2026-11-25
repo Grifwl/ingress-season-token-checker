@@ -297,12 +297,8 @@ export const cygnus: SeriesConfig = {
       inPerson: false,
       infoUrl: "https://ingress.com/news/2026-crystalhorizon",
       notes: {
-        en:
-          "Only Stages 1 and 2 grant tokens; Stages 3 and 4 only grant items. " +
-          "Stage 2 starts after restarting the campaign.",
-        es:
-          "Solo las etapas 1 y 2 dan tokens; las etapas 3 y 4 solo dan objetos. " +
-          "La etapa 2 empieza al reiniciar la campaña.",
+        en: "Only Stages 1 and 2 grant tokens; Stages 3 and 4 only grant items.",
+        es: "Solo las etapas 1 y 2 dan tokens; las etapas 3 y 4 solo dan objetos.",
       },
       kind: "campaign",
       // Each stage has four assignments, done one after the other, and
