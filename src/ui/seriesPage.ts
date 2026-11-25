@@ -333,15 +333,21 @@ export class SeriesPage {
     const t = m();
     let detail: string;
     let options: string;
+    // A stage made of assignments (see DetailedAssignment.steps) is shown
+    // with its own wording: its entries are assignments, not bounties.
+    const stage = isDetailed(a) && a.steps === "assignments";
     if (isDetailed(a)) {
-      detail = t.detailedAssignment(a.bounties.map(fmt).join(" + "), fmt(a.reward), a.required, a.bounties.length);
+      const tokens = a.bounties.map(fmt).join(" + ");
+      detail = stage
+        ? t.stageDetail(a.reward > 0 ? `${tokens} + ${fmt(a.reward)}` : tokens)
+        : t.detailedAssignment(tokens, fmt(a.reward), a.required, a.bounties.length);
       // A completed assignment with bounties still undone gets a second
       // option to say it was closed (its reward claimed), which forfeits
       // the missing bounties. Once the next assignment is started it must
       // have been closed, so the open option is no longer offered.
       options = Array.from({ length: a.bounties.length + 1 }, (_, n) => {
         const value = String(n);
-        const done = t.bountiesDone(n, a.bounties.length);
+        const done = stage ? t.assignmentsDone(n, a.bounties.length) : t.bountiesDone(n, a.bounties.length);
         if (!canCloseEarly(a, n)) return option(value, done, progress === n);
         const isCurrent = progress === n;
         return [
@@ -364,7 +370,7 @@ export class SeriesPage {
       `<span class="row-title">${esc(tx(a.name))}</span>
        <small class="muted">${esc(detail)}</small>
        ${note ? `<small class="note">${esc(note)}</small>` : ""}
-       ${locked ? `<small class="muted">${esc(t.lockedAssignment)}</small>` : ""}
+       ${locked ? `<small class="muted">${esc(stage ? t.lockedStage : t.lockedAssignment)}</small>` : ""}
        ${closing.closed ? `<small class="muted">${esc(t.closedAssignment)}</small>` : ""}`,
       `<select data-event="${eventId}" data-prop="assignment" data-index="${index}"${locked ? " disabled" : ""}>${options}</select>`,
     );

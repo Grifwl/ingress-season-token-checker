@@ -46,6 +46,7 @@ function oneDayEvents(
  * - https://ingress.com/news/2026-cygnus-globaldeploy
  * - https://ingress.com/news/2026-thekeeperswerefirst (Noise Floor details)
  * - https://ingress.com/news/2026-leonids (Leonids: Through the Ages)
+ * - https://ingress.com/news/2026-crystalhorizon (Crystal Horizon)
  *
  * Global Battles: the post gives the per-assignment totals (1,000 / 2,500 /
  * 4,500). The bounty breakdowns of the three assignments were read in
@@ -296,12 +297,39 @@ export const cygnus: SeriesConfig = {
       startDate: "2026-12-02",
       endDate: "2026-12-21",
       inPerson: false,
-      kind: "open",
-      maxTokens: 2000,
+      infoUrl: "https://ingress.com/news/2026-crystalhorizon",
       notes: {
-        en: "Assignment details will be published closer to the start date.",
-        es: "El detalle de las asignaciones se publicará cerca de la fecha de inicio.",
+        en:
+          "Only Stages 1 and 2 grant tokens; Stages 3 and 4 only grant items. " +
+          "Stage 2 starts after restarting the campaign.",
+        es:
+          "Solo las etapas 1 y 2 dan tokens; las etapas 3 y 4 solo dan objetos. " +
+          "La etapa 2 empieza al reiniciar la campaña.",
       },
+      kind: "campaign",
+      // Each stage has four assignments, done one after the other, and
+      // each completed assignment grants 250 tokens (its bounties grant
+      // none, so they are left out). A stage is therefore modelled as one
+      // entry whose steps are its assignments, all of them required and in
+      // order, and Stage 2 stays locked until Stage 1 is completed.
+      assignments: [
+        {
+          name: { en: "Stage 1", es: "Etapa 1" },
+          bounties: [250, 250, 250, 250],
+          reward: 0,
+          required: 4,
+          ordered: true,
+          steps: "assignments",
+        },
+        {
+          name: { en: "Stage 2", es: "Etapa 2" },
+          bounties: [250, 250, 250, 250],
+          reward: 0,
+          required: 4,
+          ordered: true,
+          steps: "assignments",
+        },
+      ],
     },
   ],
 };

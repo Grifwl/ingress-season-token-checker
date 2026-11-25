@@ -215,6 +215,15 @@ export interface DetailedAssignment {
    * between the cheapest and the most valuable ones.
    */
   ordered?: boolean;
+  /**
+   * What the entries of `bounties` are. Usually "bounties" (the default).
+   * Use "assignments" for a campaign stage whose tokens are only granted
+   * when each of its assignments is completed (their own bounties grant
+   * nothing): each entry is then one assignment, the stage is the
+   * {@link DetailedAssignment} and the page talks about stages and
+   * assignments instead of assignments and bounties.
+   */
+  steps?: "bounties" | "assignments";
   /** Caveats about this assignment's figures. */
   note?: LocalizedText;
 }

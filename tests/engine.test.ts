@@ -36,6 +36,7 @@ describe("series configs", () => {
     const max = (id: string) => eventMaxTokens(cygnus.events.find((e) => e.id === id)!);
     expect(max("global-battles")).toBe(8000);
     expect(max("noise-floor")).toBe(2000);
+    expect(max("crystal-horizon")).toBe(2000);
   });
 });
 
@@ -108,6 +109,18 @@ describe("assignments", () => {
     // the first one (3,300 Reso Points).
     expect(assignmentEarned(gold, 1)).toEqual({ min: 500, max: 500 });
     expect(assignmentRemaining(gold, 1, "minimum")).toEqual({ min: 3500, max: 3500 });
+  });
+
+  it("values Crystal Horizon stages by completed assignments, in order", () => {
+    const ch = cygnus.events.find((e) => e.id === "crystal-horizon");
+    if (ch?.kind !== "campaign") throw new Error("crystal-horizon must be a campaign");
+    const [stage1, stage2] = ch.assignments;
+    expect(assignmentEarned(stage1!, 3)).toEqual({ min: 750, max: 750 });
+    expect(assignmentRemaining(stage1!, 3, "minimum")).toEqual({ min: 250, max: 250 });
+    expect(assignmentEarned(stage2!, 2)).toEqual({ min: 500, max: 500 });
+    // Stage 2 cannot be started until every assignment of Stage 1 is done.
+    expect(enforceAssignmentOrder(ch.assignments, [3, 2])).toEqual([3, 0]);
+    expect(enforceAssignmentOrder(ch.assignments, [4, 2])).toEqual([4, 2]);
   });
 
   it("distinguishes full and minimum plans", () => {
