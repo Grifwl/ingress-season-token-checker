@@ -175,21 +175,21 @@ export const cygnus: SeriesConfig = {
       kind: "campaign",
       assignments: [
         {
-          name: { en: "Assignment 1 (5 battle beacons)", es: "Asignación 1 (5 balizas de batalla)" },
+          name: { en: "Bronze tier (5 battle beacons)", es: "Nivel Bronce (5 balizas de batalla)" },
           bounties: [200, 200, 200],
           reward: 400,
           required: 3,
           ordered: true,
         },
         {
-          name: { en: "Assignment 2 (50 battle beacons)", es: "Asignación 2 (50 balizas de batalla)" },
+          name: { en: "Silver tier (50 battle beacons)", es: "Nivel Plata (50 balizas de batalla)" },
           bounties: [500, 500, 500],
           reward: 1000,
           required: 3,
           ordered: true,
         },
         {
-          name: { en: "Assignment 3 (200 battle beacons)", es: "Asignación 3 (200 balizas de batalla)" },
+          name: { en: "Gold tier (200 battle beacons)", es: "Nivel Oro (200 balizas de batalla)" },
           bounties: [900, 900, 900],
           reward: 1800,
           required: 3,
