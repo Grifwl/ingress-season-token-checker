@@ -53,9 +53,9 @@ function oneDayEvents(
  *
  * Global Deploy: the post gives each Stage 1 assignment's Reso Point
  * threshold and its tokens (2,000 / 2,000 / 4,000), but not how they are
- * split between its bounties and its completion reward. The breakdowns
- * are read in Dispatch once the campaign starts; assignments not seen
- * there yet only carry their totals.
+ * split between its bounties and its completion reward. The bounty
+ * breakdowns of the three assignments were read in Dispatch once the
+ * campaign started.
  */
 export const cygnus: SeriesConfig = {
   id: "cygnus",
@@ -230,7 +230,10 @@ export const cygnus: SeriesConfig = {
         },
         {
           name: { en: "Gold tier (5,000 Reso Points)", es: "Nivel Oro (5.000 Reso Points)" },
-          total: 4000,
+          // Read in Dispatch on 2026-11-25: 3,300 / 4,200 / 5,000 Reso Points.
+          bounties: [500, 500, 1000],
+          reward: 2000,
+          required: 3,
         },
       ],
     },
