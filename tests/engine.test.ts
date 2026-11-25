@@ -100,6 +100,16 @@ describe("assignments", () => {
     expect(assignmentEarned(a1!, 4)).toEqual({ min: 200, max: 200 });
   });
 
+  it("knows exactly which bounties are done when they are ordered", () => {
+    const gd = cygnus.events.find((e) => e.id === "global-deploy");
+    if (gd?.kind !== "campaign") throw new Error("global-deploy must be a campaign");
+    const gold = gd.assignments[2]!;
+    // Gold tier: 500 / 500 / 1,000 + 2,000. One bounty done can only be
+    // the first one (3,300 Reso Points).
+    expect(assignmentEarned(gold, 1)).toEqual({ min: 500, max: 500 });
+    expect(assignmentRemaining(gold, 1, "minimum")).toEqual({ min: 3500, max: 3500 });
+  });
+
   it("distinguishes full and minimum plans", () => {
     expect(assignmentRemaining(a1!, 0, "full")).toEqual({ min: 200, max: 200 });
     expect(assignmentRemaining(a1!, 0, "minimum")).toEqual({ min: 170, max: 170 });

@@ -208,6 +208,13 @@ export interface DetailedAssignment {
   reward: number;
   /** Number of bounties needed to complete the assignment. */
   required: number;
+  /**
+   * Whether the bounties can only be done in list order, e.g. growing
+   * thresholds of the same stat (150 / 300 / 500 Reso Points). Then the
+   * number of bounties done tells exactly which ones, instead of a range
+   * between the cheapest and the most valuable ones.
+   */
+  ordered?: boolean;
   /** Caveats about this assignment's figures. */
   note?: LocalizedText;
 }

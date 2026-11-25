@@ -220,6 +220,7 @@ export const cygnus: SeriesConfig = {
           bounties: [250, 250, 500],
           reward: 1000,
           required: 3,
+          ordered: true,
         },
         {
           name: { en: "Silver tier (2,500 Reso Points)", es: "Nivel Plata (2.500 Reso Points)" },
@@ -227,6 +228,7 @@ export const cygnus: SeriesConfig = {
           bounties: [250, 250, 500],
           reward: 1000,
           required: 3,
+          ordered: true,
         },
         {
           name: { en: "Gold tier (5,000 Reso Points)", es: "Nivel Oro (5.000 Reso Points)" },
@@ -234,6 +236,7 @@ export const cygnus: SeriesConfig = {
           bounties: [500, 500, 1000],
           reward: 2000,
           required: 3,
+          ordered: true,
         },
       ],
     },

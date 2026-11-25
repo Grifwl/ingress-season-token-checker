@@ -97,18 +97,24 @@ export function eventMaxTokens(event: EventConfig): number {
 }
 
 /**
- * Tokens granted by `count` bounties out of a list when we do not know which
- * ones were done: the minimum is the `count` cheapest, the maximum the
- * `count` most valuable.
+ * Tokens granted by `count` bounties of an assignment.
  *
- * @param bounties - Token value of each bounty.
- * @param count - Number of bounties done.
+ * For an {@link DetailedAssignment.ordered | ordered} assignment the
+ * bounties are known exactly: the `count` that follow the first `skip`
+ * ones in list order. Otherwise we do not know which ones they are, so the
+ * minimum is the `count` cheapest and the maximum the `count` most
+ * valuable of the whole list (`skip` is ignored).
+ *
+ * @param a - Assignment config.
+ * @param count - Number of bounties to value.
+ * @param skip - Bounties before them in list order (ordered assignments only).
  * @returns Interval of possible token sums.
  */
-function bountySum(bounties: number[], count: number): Range {
-  const sorted = [...bounties].sort((a, b) => a - b);
-  const n = Math.max(0, Math.min(count, sorted.length));
+function bountySum(a: DetailedAssignment, count: number, skip = 0): Range {
   const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
+  const n = Math.max(0, Math.min(count, a.bounties.length));
+  if (a.ordered) return exact(sum(a.bounties.slice(skip, skip + n)));
+  const sorted = [...a.bounties].sort((x, y) => x - y);
   return { min: sum(sorted.slice(0, n)), max: sum(sorted.slice(sorted.length - n)) };
 }
 
@@ -233,7 +239,7 @@ export function assignmentEarned(a: Assignment, progress: number): Range {
   if (isDetailed(a)) {
     const done = Math.min(progress, a.bounties.length);
     const reward = done >= a.required ? a.reward : 0;
-    return add(bountySum(a.bounties, done), exact(reward));
+    return add(bountySum(a, done), exact(reward));
   }
   if (progress >= OPAQUE_COMPLETED) return exact(a.total);
   // In progress without a breakdown: anything from nothing to almost all.
@@ -261,9 +267,10 @@ export function assignmentRemaining(a: Assignment, progress: number, plan: Campa
 
   const done = Math.min(progress, a.bounties.length);
   if (done >= a.required) return exact(0);
-  // Which bounties are still pending is unknown, so value the missing ones
-  // with the cheapest/most valuable options of the whole list.
-  return add(bountySum(a.bounties, a.required - done), exact(a.reward));
+  // Unless the bounties are ordered, which ones are still pending is
+  // unknown, so the missing ones are valued with the cheapest/most valuable
+  // options of the whole list.
+  return add(bountySum(a, a.required - done, done), exact(a.reward));
 }
 
 /**
@@ -281,12 +288,12 @@ export function assignmentForfeited(a: Assignment, progress: number, plan: Campa
   // Opaque assignments cannot be partially skipped as far as we know.
   if (!isDetailed(a)) return exact(0);
   const done = Math.min(progress, a.bounties.length);
-  if (closed) return bountySum(a.bounties, a.bounties.length - done);
+  if (closed) return bountySum(a, a.bounties.length - done, done);
   if (plan === "full") return exact(0);
   // Once the assignment is complete the agent stops; before that, only the
   // required bounties will be done.
-  const skipped = a.bounties.length - Math.max(done, a.required);
-  return bountySum(a.bounties, skipped);
+  const stopAt = Math.max(done, a.required);
+  return bountySum(a, a.bounties.length - stopAt, stopAt);
 }
 
 /**
